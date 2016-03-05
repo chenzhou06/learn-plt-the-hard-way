@@ -1,0 +1,730 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Understanding CoCo VM: <code>main.cpp</code></title>
+<!-- 2016-03-05 周六 19:03 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
+<meta  name="author" content="Chen Zhou" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #eee; font-family: monospace;
+	    padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Understanding CoCo VM: <code>main.cpp</code></h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. The <code>main.cpp</code> file.</a></li>
+<li><a href="#sec-2">2. Stack</a></li>
+<li><a href="#sec-3">3. Signal Handler</a></li>
+<li><a href="#sec-4">4. Initiate Types</a></li>
+<li><a href="#sec-5">5. Enter the <code>main</code> function</a></li>
+<li><a href="#sec-6">6. Parse and Run</a></li>
+</ul>
+</div>
+</div>
+<p>
+This is a project for learning programming language theory. Since I do
+not have much experience in computer science, I decide to go through a
+real but simple project line by line, trying to interpret every code I
+encountered during the process. The project I chose is the <a href="http://knuth.luther.edu/~leekent/CoCo/">CoCo
+virtual machine</a> for Python, which is implemented in C++ and has a book
+dedicated to teaching basic programming theory as a company, thus the
+learning procedure would be much facilitated.
+</p>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> The <code>main.cpp</code> file.</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+A lots of header files from which we can glimpse the whole picture of
+this virtual machine.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">#include "PyStack.h"
+#include "PyScanner.h"
+#include "PyParser.h"
+#include "PyCode.h"
+#include "PyObject.h"           // Oh, maybe I shall start here.
+#include "PyInt.h"
+#include "PyType.h"
+#include "PyFunction.h"
+#include "PyBuiltInPrint.h"
+#include "PyBuiltInFPrint.h"
+#include "PyBuiltInTPrint.h"
+#include "PyException.h"        // Include once.
+#include "PyExceptionType.h"
+#include "PyBuiltInInput.h"
+#include "PyStr.h"
+#include "PyFloat.h"
+#include "PyBool.h"
+#include "PyRange.h"
+#include "PyRangeType.h"
+#include "PyRangeIterator.h"
+#include "PyBuiltInIter.h"
+#include "PyBuiltInLen.h"
+#include "PyBuiltInConcat.h"
+#include "PyFrame.h"
+#include "PyException.h"        // Yes, include twice.
+#include &lt;iostream&gt;
+#include &lt;fstream&gt;
+#include &lt;unordered_map&gt;
+#include &lt;csignal&gt;
+#include &lt;stdlib.h&gt;
+</pre>
+</div>
+
+<p>
+These header files can be organized in three major categories as Table
+<a href="#tab:header-files">1</a>.
+</p>
+
+<table id="tab:header-files" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption class="t-above"><span class="table-number">Table 1:</span> Organization of header files</caption>
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">Python Objects</th>
+<th scope="col" class="left">Runtime Management</th>
+<th scope="col" class="left">Parser</th>
+<th scope="col" class="left">Builtin Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">PyObject.h</td>
+<td class="left">PyStack.h</td>
+<td class="left">PyScanner.h</td>
+<td class="left">PyBuiltInPrint</td>
+</tr>
+
+<tr>
+<td class="left">PyBool.h</td>
+<td class="left">PyFrame.h</td>
+<td class="left">PyCode.h</td>
+<td class="left">PyBuiltInFPrint.h</td>
+</tr>
+
+<tr>
+<td class="left">PyInt.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">PyBuiltInTPrint.h</td>
+</tr>
+
+<tr>
+<td class="left">PyType.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">PyBUiltInInput.h</td>
+</tr>
+
+<tr>
+<td class="left">PyFunction.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">PyBuiltInIter.h</td>
+</tr>
+
+<tr>
+<td class="left">PyException.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">PyBuiltInLen.h</td>
+</tr>
+
+<tr>
+<td class="left">PyExceptionType.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">PyBuiltInConcat.h</td>
+</tr>
+
+<tr>
+<td class="left">PyStr.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">PyRange.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">PyRangeType.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">PyRangeIterator.h</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Stack</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Following the header files is the implementation of stack.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">using namespace std;
+
+vector&lt;PyFrame*&gt; callStack;
+
+void pushFrame(PyFrame* frame) {
+  callStack.push_back(frame);
+  if (callStack.size() == 1000) {
+    throw new PyException(PYILLEGALOPERATIONEXCEPTION, "Call Stack Overflow.");
+  }
+}
+
+void popFrame() {
+  callStack.pop_back();
+}
+</pre>
+</div>
+
+<p>
+The <code>callStack</code> is actually a vector of <code>PyFrame</code> pointers. The
+function <code>pushFrame</code> and <code>popFrame</code> utilize vector's method
+<code>push_back</code> and <code>pop_back</code> respectively. When push a new frame to the
+stack, The function <code>pushFrame</code> also check whether the length of the
+stack is over 1000, otherwise an <code>PyException</code> saying "Call Stack
+Overflow" would be thrown.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Signal Handler</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+The CoCo VM use signal to catch six uncaught exceptions.
+</p>
+
+<table id="tab:sig-exp" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption class="t-above"><span class="table-number">Table 2:</span> Signal and Exceptions</caption>
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">Signal</th>
+<th scope="col" class="left">Exception</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">SIGABRT</td>
+<td class="left">Program Execution Aborted</td>
+</tr>
+
+<tr>
+<td class="left">SIGFPE</td>
+<td class="left">Arithmetic or Overflow Error</td>
+</tr>
+
+<tr>
+<td class="left">SIGILL</td>
+<td class="left">Illegal Instruction in Virtual Machine</td>
+</tr>
+
+<tr>
+<td class="left">SIGINT</td>
+<td class="left">Execution Interrupted</td>
+</tr>
+
+<tr>
+<td class="left">SIGSEGV</td>
+<td class="left">Illegal Memory Access</td>
+</tr>
+
+<tr>
+<td class="left">SIGTERM</td>
+<td class="left">Termination Requested</td>
+</tr>
+</tbody>
+</table>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">void sigHandler(int signum) {
+  cerr &lt;&lt;"\n\n";
+  cerr &lt;&lt; "**********************************************************" &lt;&lt; endl;
+  cerr &lt;&lt; "      An Uncaught Exception Occurred" &lt;&lt; endl;
+  cerr &lt;&lt; "**********************************************************" &lt;&lt; endl;
+  cerr &lt;&lt; "Signal: ";
+  switch (signum) {
+  case SIGABRT:
+    cerr &lt;&lt; "Program Execution Aborted" &lt;&lt; endl;
+    break;
+  case SIGFPE:
+    cerr &lt;&lt; "Arithmetic or Overflow Error" &lt;&lt; endl;
+    break;
+  case SIGILL:
+    cerr &lt;&lt; "Illegal Instruction in Virtual Machine" &lt;&lt; endl;
+    break;
+  case SIGINT:
+    cerr &lt;&lt; "Execution Interrupted" &lt;&lt; endl;
+    break;
+  case SIGSEGV:
+    cerr &lt;&lt; "Illegal Memory Access" &lt;&lt; endl;
+    break;
+  case SIGTERM:
+    cerr &lt;&lt; "Termination Requested" &lt;&lt; endl;
+    break;
+  }
+
+  cerr &lt;&lt; "----------------------------------------------------------" &lt;&lt; endl;
+  cerr &lt;&lt; "                  The Exception's Traceback" &lt;&lt; endl;
+
+  // Go through the stack to print error information.
+  for (int k=callStack.size()-1; k&gt;=0; k--) {
+    cerr &lt;&lt; "==========&gt; At PC="
+	 &lt;&lt; (callStack[k]-&gt;getPC()-1)
+	 &lt;&lt; " in this function."
+	 &lt;&lt; endl;
+    cerr &lt;&lt; callStack[k]-&gt;getCode().prettyString("",true);
+    exit(0);
+  }
+}
+</pre>
+</div>
+
+<p>
+To produce error information when these exception happens, the
+<code>sigHandler</code> will go through the <code>callStack</code>, print the relevant PC
+and code in some readable format. The signals are all included by
+<code>csignal</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Initiate Types</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Then the function <code>initTypes</code> is defined to generate a series of
+types, which will return an <code>unordered_map</code>.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">unordered_map&lt;PyTypeId, PyType*, std::hash&lt;int&gt; &gt; PyTypes;
+bool verbose = false;
+
+unordered_map&lt;PyTypeId, PyType*, std::hash&lt;int&gt; &gt; initTypes() {
+
+    unordered_map&lt;PyTypeId, PyType*, std::hash&lt;int&gt; &gt; types;
+
+    PyType* typeType = new PyType("type", PyTypeType);
+    types[PyTypeType] = typeType;
+
+    PyType* noneType = new PyType("NoneType", PyNoneType);
+    types[PyNoneType] = noneType;
+
+    PyType* boolType = new PyType("bool", PyBoolType);
+    types[PyBoolType] = boolType;
+
+    PyType* intType = new PyType("int", PyIntType);
+    types[PyIntType] = intType;
+
+    PyType* floatType = new PyType("float", PyFloatType);
+    types[PyFloatType] = floatType;
+
+    PyType* strType = new PyType("str", PyStrType);
+    types[PyStrType] = strType;
+
+    PyType* functionType = new PyType("function", PyFunctionType);
+    types[PyFunctionType] = functionType;
+
+    PyType* builtinType = new PyType("builtin_function_or_method", PyBuiltInType);
+    types[PyBuiltInType] = builtinType;
+
+    PyType* rangeType = new PyRangeType("range", PyRangeTypeId);
+    types[PyRangeTypeId] = rangeType;
+
+    PyType* exceptionType = new PyExceptionType("Exception", PyExceptionTypeId);
+    types[PyExceptionTypeId] = exceptionType;
+
+    PyType* rangeIteratorType = new PyType("range_iterator", PyRangeIteratorType);
+    types[PyRangeIteratorType] = rangeIteratorType;
+
+    PyType* listType = new PyType("list", PyListType);
+    types[PyListType] = listType;
+
+    PyType* funListType = new PyType("funlist", PyFunListType);
+    types[PyFunListType] = funListType;
+
+    PyType* tupleType = new PyType("tuple", PyTupleType);
+    types[PyTupleType] = tupleType;
+
+    PyType* listIteratorType = new PyType("list_iterator", PyListIteratorType);
+    types[PyListIteratorType] = listIteratorType;
+
+    PyType* listIteratorType = new PyType("funlist_iterator", PyFunListIteratorType);
+    types[PyFunListIteratorType] = listIteratorType;
+
+    PyType* tupleIteratorType = new PyType("tuple_iterator", PyTupleIteratorType);
+    types[PyTupleIteratorType] = tupleIteratorType;
+
+    PyType* strIteratorType = new PyType("str_iterator", PyStrIteratorType);
+    types[PyStrIteratorType] = strIteratorType;
+
+    PyType* codeType = new PyType("code", PyCodeType);
+    types[PyCodeType] = codeType;
+
+    PyType* cellType = new PyType("cell", PyCellType);
+    types[PyCellType] = cellType;
+
+    return types;
+}
+</pre>
+</div>
+
+<p>
+Every type is produced by the constructor of class <code>PyType</code> which
+receive a string as <code>typeString</code> and a <code>PyTypeId</code> as id. In turn,
+<code>PyTypeId</code> is actually an <code>enum</code> giving each type an id. The pointer
+to the constructed <code>PyType</code> object would be stored as value in an
+unordered map whose key is the corresponding <code>PyTypeId</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Enter the <code>main</code> function</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+The main function first sets up signal handler using the function
+<code>signal</code> from <code>csignal</code>. Then once a signal appears, the specified
+signal handler would start working.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">int main(int argc, char* argv[]) {
+    char* filename;
+
+    signal(SIGABRT, sigHandler);
+    signal(SIGFPE, sigHandler);
+    signal(SIGILL, sigHandler);
+    signal(SIGINT, sigHandler);
+    signal(SIGSEGV, sigHandler);
+    signal(SIGTERM, sigHandler);
+</pre>
+</div>
+
+<p>
+The following code adds measures to parse command line arguments.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">if (argc != 2 &amp;&amp; argc !=3) {
+   cerr &lt;&lt; "Invoke as : coco [-v] filename" &lt;&lt; endl; // Expect 2-3 arguments.
+   return 0;
+}
+
+PyTypes = initTypes();                 // Trigger type initializer.
+
+if (argc == 2)
+   filename = argv[1];
+else {
+    filename = argv[2];          // The last argument is the filename.
+    verbose = true;              // Verbose switch on.
+}
+</pre>
+</div>
+
+<p>
+Actually, the command line parser only cares about the number of
+arguments. If the number is less than 2 or more than 3, the program
+just print a usage information. And it does't care whether the first
+argument is verbose switcher or not. If the <code>argc</code> is equal to 3, the
+last argument would be recognized as a filename, and the verbose flag
+would be switched on.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Parse and Run</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+The procedures to parse assembly and run instructions are all
+contained in a huge try-catch block.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-c++">try {
+    PyParser* parser = new PyParser(filename);
+
+    vector&lt;PyCode*&gt;* code = parser-&gt;parse();
+
+    string indent = "";           // TODO: Why?
+
+    for (int i = 0; i &lt; code-&gt;size(); i++) {
+	cerr &lt;&lt; (*code)[i]-&gt;prettyString(indent, false) &lt;&lt; endl;
+	cerr &lt;&lt; endl;
+    }
+
+    unordered_map&lt;string, PyObject*&gt; globals; // Global environment is a hashmap.
+
+    globals["print"] = new PyBuiltInPrint();
+    globals["fprint"] = new PyBuiltInFPrint();
+    globals["tprint"] = new PyBuiltInTPrint();
+    globals["input"] = new PyBuiltInInput();
+    globals["iter"] = PyTypes[PyIterType];
+    globals["float"] =  PyTypes[PyFloatType];
+    globals["int"] =  PyTypes[PyIntType];
+    globals["str"] =  PyTypes[PyStrType];
+    globals["funlist"] = PyTypes[PyFunListType];
+    globals["list"] = PyTypes[PyListType];
+    globals["type"] = PyTypes[PyTypeType];
+    globals["bool"] = PyTypes[BoolType];
+    globals["range"] = PyTypes[PyRangeTypeId];
+    globals["Exception"] = PyTypes[PyExceptionTypeId];
+    globals["len"] = new PyBuiltInLen();
+    globals["concat"] = new PyBuiltInConcat();
+
+    bool foundMain = false;
+
+    for (int i = 0; i &lt; code-&gt;size(); i++) {
+	if ((*code)[i]-&gt;getName() == "main")
+	    foundMain = true;
+
+	globals[(*code)[i]-&gt;getName()] = new PyFunction(*((*code)[i]),
+							globals,NULL);
+
+	if (!foundMain) {
+	    cerr &lt;&lt; "Error: No main() function found. A main() is required in CoCo VM programs."
+		 &lt;&lt; endl;
+	    return 0;
+	}
+
+	vector&lt;PyObject*&gt;* args = new vector&lt;PyObject*&gt;();
+	PyObject* result = globals["main"]-&gt;callMethod("__call__", args);
+    } catch (PyException* ex) {
+	cerr &lt;&lt; "\n\n";
+	cerr &lt;&lt; "*********************************************************" &lt;&lt; endl;
+	cerr &lt;&lt; "            An Uncaught Exception Occurred" &lt;&lt; endl;
+	cerr &lt;&lt; "*********************************************************" &lt;&lt; endl;
+	cerr &lt;&lt; ex-&gt;toString() &lt;&lt; endl;
+	cerr &lt;&lt; "---------------------------------------------------------" &lt;&lt; endl;
+	cerr &lt;&lt; "              The Exception's Traceback" &lt;&lt; endl;
+	cerr &lt;&lt; "---------------------------------------------------------" &lt;&lt; endl;
+	ex-&gt;printTraceBack();
+	cerr &lt;&lt; "*********************************************************" &lt;&lt; endl;
+	cerr &lt;&lt; "            An Uncaught Exception Occurred (See Above) " &lt;&lt; endl;
+	cerr &lt;&lt; "*********************************************************" &lt;&lt; endl;
+	cerr &lt;&lt; ex-&gt;toString() &lt;&lt; endl;
+	cerr &lt;&lt; "*********************************************************" &lt;&lt; endl;
+    }
+
+    return 0;
+ }
+</pre>
+</div>
+
+<p>
+Every type would be registered in the global environment hashmap. The
+parser first would generate a vector of <code>PyCode</code> object. The assembly
+code would be printed, the labels in that assembly would be replaced
+with the actual address location.
+</p>
+
+<p>
+The CoCo VM demands the appearance of the <code>main</code> function. It will
+traverse all the <code>PyCode</code> objects to find a function named as "main".
+Meanwhile all code objects would be transformed to <code>PyFunction</code>
+objects and be registered in the global environment. The catch branch
+would handle all exception once a <code>PyException</code> object is thrown.
+</p>
+
+<p>
+In summary, the main file does three things:
+</p>
+
+<ol class="org-ol">
+<li>Initialize all Python types.
+</li>
+<li>Build global environment.
+</li>
+<li>Invoke the "main" function.
+</li>
+</ol>
+
+<p>
+The next note about CoCo VM will analyze <code>PyObject</code> which are central
+to this Python VM implementation. Without understanding the <code>PyObject</code>
+and its deviation the parse would be a headache.
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Chen Zhou</p>
+<p class="date">Created: 2016-03-05 周六 19:03</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.1.50.2 (<a href="http://orgmode.org">Org</a> mode 8.2.10)</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
