@@ -1,0 +1,86 @@
+#+TITLE: The Very Beginning of Object: ~PyObject.h~
+#+AUTHOR: Chen Zhou
+
+This note focuses on how Python Object is implemented. Python is an
+object-oriented language, everything in this language (almost?) is an
+object, including "int", "float", "string". Even "type" is an object.
+
+The textbook /Foundations of Programming Language/ has a nice figure
+(Fig.4.68) illustrating the CoCo type hierarchy.
+
+# TODO: Type hierarchy.
+
+* The header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyObject.h
+  #ifndef PYOBJECT_H_
+  #define PYOBJECT_H_
+
+  #include <string>
+  #include <unordered_map>
+  #include <vector>
+  #include <iostream>
+
+  using namespace std;
+
+  class PyType;
+
+  class PyObject {
+  public:
+      PyObject();
+      virtual ~PyObject();
+      virtual PyType* getType();
+      virtual string toString();
+      void decRef();
+      void incRef();
+      int getRefCount() const;    // TODO: Explain these three `ref` functions.
+
+      PyObject* callMethod(string name, vector<PyObject*>* args);
+
+  protected:
+      unordered_map<string,
+		    PyObject* (PyObject::*)(vector<PyObject*>*)>
+      dict;                       // TODO: Explain this.
+
+      int refCount;
+
+      virtual PyObject* __str__(vector<PyObject*>* args);
+      virtual PyObject* __type__(vector<PyObject*>* args);
+  };
+
+  ostream& operator << (ostream& os, PyObject& t); // TODO: Explain this.
+
+  extern bool verbose;            // TODO: Explain `extern`.
+
+  #endif
+#+END_SRC
+
+The header file just defined a ~PyObject~ class and claimed a ~PyType~
+class. The class ~PyObject~ has virtual methods ~getType~ and
+~toString~, so the classes inherited from it can use their own
+specific implementation.
+
+There are three functions about ~Ref~. I believe they are used by a
+garbage manager in somewhere.
+
+# TODO: Where the garbage collection is?
+
+The most important method is the ~callMethod~ which needs a string and
+a pointer to a vector of pointers to ~PyObject~. Everything is object,
+so are the arguments.
+
+The most important property of ~PyObject~ is the ~unordered_map~ which
+are responsible to keep records of every Python object's
+property. This ~unordered_map~ use string as its key, the
+corresponding value is a function pointer which points to the
+~PyObject~ member function. So under the hood, ~PyObject~ is just
+~unordered_map~.
+
+The private methods ~__str__~ and ~__type__~ have no obvious usage here.
+# TODO: Add reference to explain the usage.
+
+The CoCo VM also overloaded operator ~<<~ for ~PyObject~, so we can
+just print a ~PyObject~ by ~std::cout~.
+
+The last code in this header file is a global variable ~verbose~ which
+we have met in the ~main.cpp~.
