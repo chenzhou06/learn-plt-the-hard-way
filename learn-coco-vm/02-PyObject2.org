@@ -1,0 +1,161 @@
+#+TITLE: PyObject: ~PyObject.cpp~
+#+AUTHOR: Chen Zhou
+
+* Includes
+Three classes ( ~PyException~, ~PyType~, and ~PyStr~) are involved in
+the class ~PyObject~. All these header files are included.
+
+#+BEGIN_SRC c++ :tangle ./export/PyObject.cpp
+#include "PyObject.h"
+#include "PyException.h"
+#include "PyStr.h"
+#include <iostream>
+#include "PyType.h"
+#include <sstream>
+#+END_SRC
+
+The ~ssteam~ library provides a ~stringsteam~ class which is inherited
+from ~iosteam~ but use a string buffer on which we can perform
+input/output operation. This library can facilitate string formation
+in later sections.
+
+* Operator ~<<~ for ~PyObject~
+The first code in this file is to overload ~operator <<~ for
+~PyObject~. This overloading uses the member function ~toString~ to
+produce a string as the output form.
+
+#+BEGIN_SRC c++ :tangle ./export/PyObject.cpp
+  using namespace std;
+
+  ostream& operator << (ostream &os, PyObject &t) {
+      return os << t.toString();
+  }
+#+END_SRC
+
+The most important method of ~PyObject~ is ~callMethod~ which is
+responsible to call different methods of a Python object.
+
+#+BEGIN_SRC c++ :tangle ./export/PyObject.cpp
+  PyObject* PyObject::callMethod(string name, vector<PyObject*>* args) {
+
+      PyObject* (PyObject::*mbr)(vector<PyObject*>*);
+
+      if (dict.find(name) == dict.ednd()) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"TypeError: '" +
+				getType()->toString() +
+				"' object has no attribute '" +
+				name +
+				"'");
+      }
+
+      mbr = dict[name];
+
+      return (this->*mbf)(args);
+  }
+#+END_SRC
+
+The ~callMethod~ first declares a function pointer which points to a
+member function. Its value is obtained from the private field
+~dict~. If the ~dict~ do not contain the magic method specified by the
+string ~name~, an exception would be thrown out. The last statement
+returns a ~PyObject~ pointer by invoke this ~mbr~ function pointer.
+
+* Constructor
+
+The ~PyObject~ constructor do only two things: add two magic methods,
+~__str__~ and ~__type__~, to its private field ~dict~, which both take
+a function pointer defined later.
+
+#+BEGIN_SRC c++ ./export/PyObject.cpp
+  PyOject::PyObject() {
+      dict["__str__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*))
+	  (&PyObject::__str__);
+      dict["__type__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*))
+	  (&PyObject::__type__);
+  }
+
+  PyObject::~PyObject() {
+  }
+#+END_SRC
+
+It's interesting that the destructor do nothing to this class.
+
+The default magic methods, ~__str__~ and ~__type__~, for all
+~PyObject~ are defined as follows.
+
+#+BEGIN_SRC c++ :tangle ./export/PyObject.cpp
+  PyObject* PyObject::__str__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return new PyStr(toString());
+  }
+
+  PyObject* PyObject::__type__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return (PyObject*)this->getType();
+  }
+#+END_SRC
+
+These two magic functions are similar. They are all create an
+~ostringstream~ instance by which they can format a string with
+operator ~<<~ in the same way as I/O formation. The ~ostringstream~
+has a member function ~str~ which can transfer this ~stringstream~ to
+a real ~string~.
+
+Since in this implementation all member functions of a ~PyObject~
+return a pointer to ~PyObject~. The ~__str__~ function do not return a
+plain string, it returns a pointer to ~PyStr~ object instead.
+
+
+* Member functions
+
+#+BEGIN_SRC c++ :tangle ./export/PyObject.cpp
+  PyType* PyObject::getType() {
+      return NULL;
+  }
+
+  string PyObject::toString() {
+      return "PyObject()";
+  }
+
+  void PyObject::incRef() {
+      refCount++;
+  }
+
+  void PyObject::decRef() {
+      refCount--;
+  }
+
+  int PyObject::getRefCount() const {
+      return refCount;
+  }
+#+END_SRC
+
+The member function ~getType~ is virtual, so the actual outcome is
+depended on a more specific instance. If this function is directly
+invoked from ~PyObject~, a ~NULL~ pointer would be returned and this
+is not supposed to happen.
+
+The same situation happens to the ~toString~ function as well. When
+the ~toString~ method is directly invoked from a primitive ~PyObject~,
+a string would be returned, not a NULL.
+
+The manipulation of reference counter is straightforward. Three
+functions (~incRef~, ~decRef~, and ~getRefcount~) are defined to
+change the reference counter in a ~PyObject~.
