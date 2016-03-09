@@ -1,0 +1,243 @@
+#+TITLE: Exception: ~PyException~
+#+AUTHOR: Chen Zhou
+
+* The header file
+The ~PyException~ object is inherited from ~PyObject~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.h
+  #ifndef PYEXCEPTION_H_
+  #define PYEXCEPTION_H_
+
+  #include "PyObject.h"
+  class PyFrame;
+  #include <string>
+  using namespace std;
+
+  class PyException : public PyObject {
+  public:
+      PyException(int exceptType, PyObject* val);
+      PyException(int exceptType, string message);
+      virtual ~PyException();
+      int getExceptionType();
+      void tracebackAppend(PyFrame* frame);
+      string toString();
+      PyType* getType();
+      PyObject* getTraceBack();
+      void printTraceBack();
+
+  protected:
+      int exceptionType;
+      PyObject* val;
+      vector<PyFrame*> traceback;
+      virtual PyObject* __excmatch__(vector<PyObject*>* args);
+  };
+#+END_SRC
+
+The constructor of class ~PyException~ takes an int which stands
+for a exception type and either a pointer to ~PyObject~ or a string
+message.
+
+To provide useful error massages, the exception class has to keep
+records of the frames from which an exception may be invoked. This
+function is provided mainly by three functions: ~tracebackAppend~
+which takes a pointer to a frame, ~getTraceBack~, and
+~printTraceBack~. They in turn work with the protected field members:
+~exceptionType~, ~val~ (a pointer to ~PyObject~), ~traceback~ (a
+vector of pointers to ~PyFrame~), and a virtual function
+~__excmatch__~ which checks the argument passed to it against the type
+of the current object's exception. However, their definitions remain to
+be revealed in later sections about the ~PyException.cpp~ file.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.h
+  const int PYEXCEPTION = 1;
+  const int PYEMPTYSTACKEXCEPTION = 2;
+  const int PYPARSEEXCEPTION = 3;
+  const int PYILLEGALOPERATIONEXCEPTION = 4;
+  const int PYWRONGARGCOUNTEXCEPTION = 5;
+  const int PYSTOPITERATIONEXCEPTION = 6;
+  const int PYMATCHEXCEPTION = 7;
+
+  #endif
+#+END_SRC
+
+Finally, the header file defines seven exception types with integers
+one to seven.
+
+Using ~int~ instead of ~enum~ to tag seven exception types is for the
+reason that later these integers are used as keys to make a map
+representing exceptions.
+
+* Details
+
+At first, in ~PyException.cpp~ a ~struct~ is defined to store names of
+exception. This ~struct~ also contains a method which create an
+~unordered_map~ whose keys are defined in the header file, the values
+are string representations.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.cpp
+  #include "PyList.h"
+  #include "PyBool.h"
+  #include <unordered_map>
+  #include <sstream>
+
+  using namespace std;
+
+  struct names {
+
+      static unordered_map<int, string> create_map() {
+	  unordered_map<int, string> m;
+	  m[PYEXCEPTION] = "Exception";
+	  m[PYEMPTYSTACKEXCEPTION] = "EmptyStackException";
+	  m[PYPARSEEXCEPTION] = "ParseException";
+	  m[PYILLEGALOPERATIONEXCEPTION] = "IllegalOperationException";
+	  m[PYWRONGARGCOUNTEXCEPTION] = "WrongArgCountExeption";
+	  m[PYSTOPITERATIONEXCEPTION] = "StopIterationException";
+	  m[PYMATCHEXCEPTION] = "MatchException";
+
+	  return m;
+      }
+  };
+
+  static unordered_map<int, string> excnames = names::create_map();
+#+END_SRC
+
+# TODO: Usage of ~static~.
+
+Since there are two versions of constructors, one needs a pointer to
+~PyObject~, another takes a message string, the implementation of
+constructor also has two parts. If a ~PyException~ object is
+constructed by a pointer to ~PyObject~, the private field value ~val~
+would be a pointer. If it is a string, this string would be stored into
+the field ~val~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.cpp
+  PyException::PyException(int exception, PyObject* v):
+      PyObject(), exceptionType(exception), val(v)
+  {
+      dict["__excmatch__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*))
+	  (&PyException::__excmatch__);
+  }
+
+  PyException::PyException(int exception, string msg):
+      PyObject(), exceptionType(exception), val(new PyStr(msg))
+  {
+      dict["__excmatch__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*))
+	  (&PyException::__excmatch__);
+  }
+#+END_SRC
+
+The two constructors respectively add a magic method ~__excmatch__~ to
+their private member ~dict~. The value of ~__excmatch__~ in this map
+is the private function ~__excmatch__~ declared in the header file.
+
+The descructor would delete its ~val~ value.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.cpp
+  PyException::~PyException() {
+      try {
+	  delete val;
+      } catch (...) {}
+  }
+#+END_SRC
+
+The function ~getExceptionType~ is just a help function to get value
+from the private field ~exceptionType~ which is not accessible
+directly. Setting ~exceptionType~ as a private member can prevent
+other elements of this code changing this property accidentally, which
+could be a disaster for debugging.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.cpp
+  int PyException::getExceptionType() {
+      return exceptionType;
+  }
+
+  string PyException::toString() {
+      return val->toString();
+  }
+
+  PyType* PyException::getType() {
+      return PyTypes[PyExceptionTypeId];
+  }
+#+END_SRC
+
+The class ~PyException~ has its own version of member function
+~toString~ (this function is defined as virtual in the parent class
+~PyObject~). It do not provide all information about this object, just
+invoke the ~val~'s ~toString~ method instead. At this stage, the ~val~
+in the ~PyException~ is a pointer to either a ~PyStr~ or a
+~PyObject~. Both of them have their own ~toString~ method.
+
+The member function ~getType~ of ~PyException~ is also virtual, the
+return value for this specific object is a pointer to ~PyType~ object
+which is found by searching a ~PyExceptionTypeId~ (defined in ~PyType~
+library) in an ~unordered_map~ defined in ~main.cpp~.
+
+The ~trackback~ field is managed by three member functions ~printTraceBack~,
+~tracebackAppend~ and ~getTraceback~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.cpp
+  void PyException::printTraceBack() {
+      for (int k=0; k<traceback.size(); k++) {
+	  cerr << "=========> At PC="
+	       << (traceback[k]->getPC()-1)
+	       << " in this function."
+	       << endl;
+	  cerr << traceback[k]->getCode().prettyString("", true);
+      }
+  }
+
+  void PyException::tracebackAppend(PyFrame* frame) {
+      traceback.push_back(frame);
+  }
+
+  PyObject* PyException::getTraceBack() {
+      return new PyList((vector<PyObject*>*)&traceback);
+  }
+#+END_SRC
+
+The function ~printTraceBack~ would loop through all elements of the
+~tracebak~ vector and print each element's ~PC~ and code
+representation. The vector ~traceback~ consists of pointers to the
+object ~PyFrame~. Appending a new frame to the ~traceback~ naturally
+becomes pushing a new element to that vector. The member function
+~getTraceBack~ cast the pointer of the ~traceback~ field to a pointer
+to a vector of ~PyObject~ pointers, then return them in a ~PyList~
+object.
+
+The magic function the constructor added to every ~PyException~ object
+compares ~this~ exception object against its argument.
+
+#+BEGIN_SRC c++ :tangle ./export/PyException.cpp
+  PyObject* PyException::__excmatch__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: excepted 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyObject* arg = (*args)[0];
+
+      if (this->getType() == arg)
+	  return new PyBool(true);
+
+      if (this->getType() != arg->getType()) {
+	  msg << "TypeError: Exception match type mismatch. Excepted Exception Object got "
+	      << arg->toString();
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION, msg.str());
+      } // The official version of this code has not this pair of parenthesis.
+
+      PyException* other = (PyException*) arg;
+
+      return new PyBool(this->getExceptionType() == other->getExceptionType());
+  }
+#+END_SRC
+
+The operation this function taken can be split to three steps. First,
+check the number of argument(s), if it does not equal to one, an error
+would be thrown. Second, if the types of this object and the argument
+do not agree, an error thrown too. The last step returns the outcome of
+comparing values of ~getExceptionType~.

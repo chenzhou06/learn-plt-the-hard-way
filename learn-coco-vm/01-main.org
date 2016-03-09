@@ -240,8 +240,8 @@ types, which will return an ~unordered_map~.
 Every type is produced by the constructor of class ~PyType~ which
 receive a string as ~typeString~ and a ~PyTypeId~ as id. In turn,
 ~PyTypeId~ is actually an ~enum~ giving each type an id. The pointer
-to the constructed ~PyType~ object would be stored as value in an
-unordered map whose key is the corresponding ~PyTypeId~.
+to the constructed ~PyType~ object would be stored as value in a
+~unordered~ map whose key is the corresponding ~PyTypeId~.
 
 * Enter the ~main~ function
 The main function first sets up signal handler using the function

@@ -73,8 +73,8 @@ The most important property of ~PyObject~ is the ~unordered_map~ which
 are responsible to keep records of every Python object's
 property. This ~unordered_map~ use string as its key, the
 corresponding value is a function pointer which points to the
-~PyObject~ member function. So under the hood, ~PyObject~ is just
-~unordered_map~.
+~PyObject~ member function. So under the hood, every ~PyObject~ is just
+a ~unordered_map~.
 
 The private methods ~__str__~ and ~__type__~ have no obvious usage here.
 # TODO: Add reference to explain the usage.
