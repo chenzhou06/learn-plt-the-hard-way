@@ -1,0 +1,86 @@
+#+TITLE: Type System: ~PyType~
+#+AUTHOR: Chen Zhou
+
+The class ~PyType~ is the basis of most types in CoCo. It is inherited
+from another class ~PyCallable~ which do not appear as a type in the
+enum ~PyTypeId~.
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyType.h
+  #ifndef PYTYPE_H
+  #define PYTYPE_H
+
+  #include "PyCallable.h"
+  #include <string>
+  #include <unordered_map>
+  #include <vector>
+
+  using namespace std;
+
+  enum PyTypeId {
+      PyTypeType,
+      PyNoneType,
+      PyBoolType,
+      PyIntType,
+      PyFloatType,
+      PyStrType,
+      PyFunctionType,
+      PyBuiltInType,              // TODO: What's this?
+      PyRangeTypeId,
+      PyRangeIteratorType,
+      PyListType,
+      PyListIteratorType,
+      PyFunListType,              // TODO:Why another list?
+      PyFunListIteratorType,
+      PyStrIteratorType,
+      PyCodeType,
+      PyTupleType,
+      PyTupleIteratorType,
+      PyCellType,
+      PyExceptionTypeId
+  };
+
+  class pyType: public PyCallable {
+  public:
+      PyType(string typeString, PyTypeId id);
+      virtual ~PyType();
+      string toString();
+      PyType* getType();
+      PyTypeId typeId();
+      string callName();
+
+  protected:
+      string typeString;
+      PyTypeId index;
+
+      virtual PyObject* __call__(vector<PyObject*>* args);
+      virtual PyObject* __str__(vector<PyObject*>* args);
+      virtual PyObject* __type__(vector<PyObject*>* args);
+  };
+
+  extern unordered_map<PyTypeId, PyType*, std::hash<int>> PyTypes;
+
+  #endif
+#+END_SRC
+
+The header file is straightforward. It just defined an enum
+~PyTypesId~ and a class ~PyType~ which is inherited from
+~PyCallable~. This class also uses a global hash map ~PyTypes~ which
+is defined in the main file.
+
+The CoCo VM implements every iteratable object with an additional
+iterator type. The name scheme for ~PyRangeTypeId~ is not consistent
+with others, which have extra letters ~Id~. In the description of the
+original source code, the author of CoCo VM pointed out that range
+objects are not instances of ~PyType~ class. The reason for this is
+left uncovered for the time being.
+
+It's worth noting that there two ways to fetch type information from a
+type object: one is use the member function ~getType~ which returns a
+pointer to ~PyType~ object, another is the member function ~typeId~
+which just return a ~PyTypeId~ which should be the protected field
+member ~index~.
+
+There are also three private member functions that all takes a vector
+of ~PyObject~ as argument.
