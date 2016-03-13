@@ -84,3 +84,53 @@ member ~index~.
 
 There are also three private member functions that all takes a vector
 of ~PyObject~ as argument.
+
+* Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyType.cpp
+  #include "PyObject.h"
+  #include "PyType.h"
+  #include "PyException.h"
+  #include "PyStr.h"
+  #include <iostream>
+  #include <sstream>
+
+  using namespace std;
+
+  PyType::PyType(string typeString, PyTypeId id): PyCallable() {
+      this->typeString = typeString;
+      this->index = id;
+  }
+
+  PyType::~PyType() {
+  }
+#+END_SRC
+
+The constructor takes a string and a type id and assigns them to its
+member fields respectively.
+
+* Member function of ~PyType~ class
+
+#+BEGIN_SRC c++ :tangle ./export/PyType.cpp
+  string PyType::toString() {
+      return this->typeString;
+  }
+
+  PyType* PyType::getType() {
+      return PyTypes[PyTypeType];
+  }
+
+  PyTypeId PyType::typeId() {
+      return index;
+  }
+
+  string PyType::callName() {
+      return "type";
+  }
+#+END_SRC
+
+The function ~toString~ and ~getType~ return values that the
+constructor has set (~typeString~ and ~index~).
+
+The function ~getType~ returns a pointer to a ~PyType~ instance which
+is initiated in the ~main.cpp~ file.
