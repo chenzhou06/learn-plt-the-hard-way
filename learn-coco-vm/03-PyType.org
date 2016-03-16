@@ -176,3 +176,5 @@ returned by the ~toString~ method. The ~__call__~ method is defined to invoke
 the ~__callMethod__~ function of its first argument. The ~__type__~ method just
 return the type object in the hash map ~PyTypes~ which is initiated in the
 ~main.cpp~.
+
+# TODO: Refine this paragraph, I do not understand them yet.
