@@ -134,3 +134,45 @@ constructor has set (~typeString~ and ~index~).
 
 The function ~getType~ returns a pointer to a ~PyType~ instance which
 is initiated in the ~main.cpp~ file.
+
+Three magic methods remain to mention.
+
+#+BEGIN_SRC c++ :tangle ./export/PyType.cpp
+  PyObject* PyType::__str__(vector<PyObject*>* args) {
+      return new PyStr("<class '" + toString() + "'>");
+  }
+
+  PyObject* PyType::__type__(vector<PyObject*>* args) {
+      ostringsteam msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return PyTypes[PyTypeType];
+  }
+
+  PyOject* PyType::__call__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      vector<PyObject*>* emptyArgs = new vector<PyObject*>();
+      PyObject* arg = (*args)[0];
+      string funName = "__" + this->toString() + "__";
+      return arg->callMethod(funName, emptyArgs);
+  }
+#+END_SRC
+
+The ~__str__~ method returns a new
+~PyStr~ object (pointer) which is constructed by a string containing a message
+returned by the ~toString~ method. The ~__call__~ method is defined to invoke
+the ~__callMethod__~ function of its first argument. The ~__type__~ method just
+return the type object in the hash map ~PyTypes~ which is initiated in the
+~main.cpp~.
