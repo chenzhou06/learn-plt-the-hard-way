@@ -1,0 +1,50 @@
+#+TITLE: Understanding CoCo VM: ~PyCallable~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyCallable.h
+#ifndef PYCALLABLE_H
+#define PYCALLABLE_H
+
+#include "PyObject.h"
+#include <string>
+using namespace std;
+
+class PyCallable : public PyObject {
+public:
+    PyCallable():
+    PyCallable(const PyCallable& orig);  // TODO: What's orig?
+    virtual ~PyCallable();
+
+protected:
+    virtual PyObject* __call__(vector<PyObject*>* args) = 0;
+};
+#+END_SRC
+
+In the description the author of CoCo VM mentioned that a method set to zero
+means that no instance of this class can ever be created. So ~PyCallable~ class
+is an abstract base class.
+
+* Implementation
+
+Actually the implementation in the ~.cpp~ file is even more brief than its
+header file.
+
+#+BEGIN_SRC c++ :tangle ./export/PyCallable.cpp
+  #include "PyCallable.h"
+  #include "PyException.h"
+
+  PyCallable:PyCallable() : PyObject() {   // There is no public key words.
+      dict["__call__"] =
+	  (PyObject * (PyObject::*)(vector<PyObject*>*) (&PyCallable::__call__));
+  }
+
+  PyCallable::PyCallable(const PyCallable& orig) {};
+
+  PyCallable::~PyCallable() {};
+#+END_SRC
+
+Also ~PyCallable~ is not publicly inherited from ~PyObject~, therefore the
+members defined in ~PyObject~ are not accessible for ~PyCallable~. For the time
+being, I could not understand the reason behind this decision.
