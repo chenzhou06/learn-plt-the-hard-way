@@ -11,3 +11,4 @@ code.
 * [x] PyType
 * [x] PyCallable
 * [ ] PyBool
+* [ ] PyStr
