@@ -1,0 +1,165 @@
+#+TITLE: Understanding CoCo VM: ~PyBool~
+#+AUTHOR: Chen Zhou
+
+To be honest, I do no expect the code for ~PyBool~ is such complex. I personally
+would implement ~PyBool~ as a bool type in C++. Obviously, I underestimated the
+functionality of bool in Python.
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyBool.h
+  #ifndef PYBOOL_H
+  #define PYBOOL_H
+
+  #include "PyType.h"
+  #include "PyCallable.h"
+  #include <string>
+  using namespace std;
+
+  class PyBool : public PyObject {
+  public:
+      PyBool();
+      PyBool(bool val);
+      PyBool(const PyBool& orig);
+      virtual ~PyBool();
+
+      PyType* getType();
+      string toString();
+      bool getVal();
+
+  protected:
+      bool val;
+      virtual PyObject* __float__(vector<PyObject*>* args);
+      virtual PyObject* __int__(vector<PyObject*>* args);
+      virtual PyObject* __bool__(vector<PyObject*>* args);
+      virtual PyObject* __eq__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+There are three ways to construct a ~PyBool~ object. We can initiate a ~PyBool~
+object with nothing or with a bool value or another ~PyBool~ object.
+
+The protected methods make ~PyBool~ type has versatile functions to action
+depending on context like a number or others.
+
+* Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyBool.cpp
+  #include "PyBool.h"
+  #include "PyException.h"
+  #include "PyStr.h"
+  #include "PyInt.h"
+  #include "PyFloat.h"
+
+  #include <iostream>
+  #include <sstream>
+
+  PyBool::PyBool() : PyObject() {
+      val = false;
+
+      dict["__float__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyBool::__float__);
+      dict["__int__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyBool::__int__);
+      dict["__bool__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyBool::__eq__);
+  }
+
+  PyBool::PyBool(bool val) : PyBool() {
+      this->val = val;
+  }
+
+  PyBool::PyBool(const PyBool& orig) : PyBool {
+      val = orig.val;
+  }
+
+  PyBool::~PyBool() {}
+#+END_SRC
+
+The ~PyBool~ object can be constructor by three means. The first is the most
+basic one, which be default sets its value to ~false~, and registers three magic
+methods to the ~unordered_map~ dict. A ~PyBool~ can be directly initiated by a
+bool value. This way of constructing would inherit ~PyBool~ object instead of
+~PyObject~, and the ~val~ field is set according to its argument.
+
+* Member function
+
+#+BEGIN_SRC c++ :tangle ./export/PyBool.cpp
+  string PyBool::toString() {
+      if (val)
+	  return "True";
+      return "False";
+  }
+
+  PyType* PyBool::getType() {
+      return PyTypes[PyBoolType];
+  }
+
+  bool PyBool::getVal() {
+      return val;
+  }
+#+END_SRC
+
+~PyBool~ class has two main member functions: ~toString~, ~getType~,
+~getVal~. All of them are straightforward.
+
+* Magic function
+
+#+BEGIN_SRC c++ :tangle ./export/PyBool.cpp
+  PyObject* PyBool::__eq__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyBool* other = (PyBool*) (*args)[0];
+
+      return new PyBool(val == other->val);
+  }
+
+  PyObject* PyBool::__float__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (this->getVal())
+	  return new PyFloat(1);
+
+      return new PyFloat(0);
+  }
+
+  PyObject* PyBool::__int__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << arg->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (this->getVal())
+	  return new PyInt(1);
+      return new PyInt(0);
+  }
+
+  PyObject* PyBool::__bool__(vector<PyObject*>* args) {
+      return this;
+  }
+#+END_SRC
+
+Basically, these magic functions act as type converters. The ~__int__~ magic
+function can coerce a ~PyBool~ object as a ~PyInt~ object whose value is 0
+or 1. If the ~PyBool~ object is false, its ~PyInt~ counterpart would
+be 0. Otherwise it would be 1. Similarly, the ~__float__~ magic function
+converts ~PyBool~ to float number.
+
+The ~__eq__~ function takes one argument. It first coerces that argument to a
+~PyBool~ then compares it with itself.

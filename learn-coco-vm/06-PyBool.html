@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Understanding CoCo VM: <code>PyBool</code></title>
+<!-- 2016-03-23 周三 23:25 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
+<meta  name="author" content="Chen Zhou" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #eee; font-family: monospace;
+	    padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Understanding CoCo VM: <code>PyBool</code></h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. Header file</a></li>
+<li><a href="#sec-2">2. Constructor</a></li>
+<li><a href="#sec-3">3. Member function</a></li>
+<li><a href="#sec-4">4. Magic function</a></li>
+</ul>
+</div>
+</div>
+<p>
+To be honest, I do no expect the code for <code>PyBool</code> is such complex. I personally
+would implement <code>PyBool</code> as a bool type in C++. Obviously, I underestimated the
+functionality of bool in Python.
+</p>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Header file</h2>
+<div class="outline-text-2" id="text-1">
+<div class="org-src-container">
+
+<pre class="src src-c++">#ifndef PYBOOL_H
+#define PYBOOL_H
+
+#include "PyType.h"
+#include "PyCallable.h"
+#include &lt;string&gt;
+using namespace std;
+
+class PyBool : public PyObject {
+public:
+    PyBool();
+    PyBool(bool val);
+    PyBool(const PyBool&amp; orig);
+    virtual ~PyBool();
+
+    PyType* getType();
+    string toString();
+    bool getVal();
+
+protected:
+    bool val;
+    virtual PyObject* __float__(vector&lt;PyObject*&gt;* args);
+    virtual PyObject* __int__(vector&lt;PyObject*&gt;* args);
+    virtual PyObject* __bool__(vector&lt;PyObject*&gt;* args);
+    virtual PyObject* __eq__(vector&lt;PyObject*&gt;* args);
+};
+
+#endif
+</pre>
+</div>
+
+<p>
+There are three ways to construct a <code>PyBool</code> object. We can initiate a <code>PyBool</code>
+object with nothing or with a bool value or another <code>PyBool</code> object.
+</p>
+
+<p>
+The protected methods make <code>PyBool</code> type has versatile functions to action
+depending on context like a number or others.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Constructor</h2>
+<div class="outline-text-2" id="text-2">
+<div class="org-src-container">
+
+<pre class="src src-c++">#include "PyBool.h"
+#include "PyException.h"
+#include "PyStr.h"
+#include "PyInt.h"
+#include "PyFloat.h"
+
+#include &lt;iostream&gt;
+#include &lt;sstream&gt;
+
+PyBool::PyBool() : PyObject() {
+    val = false;
+
+    dict["__float__"] = (PyObject* (PyObject::*)(vector&lt;PyObject*&gt;*)) (&amp;PyBool::__float__);
+    dict["__int__"] =
+	(PyObject* (PyObject::*)(vector&lt;PyObject*&gt;*)) (&amp;PyBool::__int__);
+    dict["__bool__"] =
+	(PyObject* (PyObject::*)(vector&lt;PyObject*&gt;*)) (&amp;PyBool::__eq__);
+}
+
+PyBool::PyBool(bool val) : PyBool() {
+    this-&gt;val = val;
+}
+
+PyBool::PyBool(const PyBool&amp; orig) : PyBool {
+    val = orig.val;
+}
+
+PyBool::~PyBool() {}
+</pre>
+</div>
+
+<p>
+The <code>PyBool</code> object can be constructor by three means. The first is the most
+basic one, which be default sets its value to <code>false</code>, and registers three magic
+methods to the <code>unordered_map</code> dict. A <code>PyBool</code> can be directly initiated by a
+bool value. This way of constructing would inherit <code>PyBool</code> object instead of
+<code>PyObject</code>, and the <code>val</code> field is set according to its argument.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Member function</h2>
+<div class="outline-text-2" id="text-3">
+<div class="org-src-container">
+
+<pre class="src src-c++">string PyBool::toString() {
+    if (val)
+	return "True";
+    return "False";
+}
+
+PyType* PyBool::getType() {
+    return PyTypes[PyBoolType];
+}
+
+bool PyBool::getVal() {
+    return val;
+}
+</pre>
+</div>
+
+<p>
+<code>PyBool</code> class has two main member functions: <code>toString</code>, <code>getType</code>,
+<code>getVal</code>. All of them are straightforward.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Magic function</h2>
+<div class="outline-text-2" id="text-4">
+<div class="org-src-container">
+
+<pre class="src src-c++">PyObject* PyBool::__eq__(vector&lt;PyObject*&gt;* args) {
+    ostringstream msg;
+
+    if (args-&gt;size() != 1) {
+	msg &lt;&lt; "TypeError: expected 1 arguments, got "
+	    &lt;&lt; args-&gt;size();
+	throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+    }
+
+    PyBool* other = (PyBool*) (*args)[0];
+
+    return new PyBool(val == other-&gt;val);
+}
+
+PyObject* PyBool::__float__(vector&lt;PyObject*&gt;* args) {
+    ostringstream msg;
+
+    if (args-&gt;size() != 0) {
+	msg &lt;&lt; "TypeError: expected 0 arguments, got "
+	    &lt;&lt; args-&gt;size();
+	throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+    }
+
+    if (this-&gt;getVal())
+	return new PyFloat(1);
+
+    return new PyFloat(0);
+}
+
+PyObject* PyBool::__int__(vector&lt;PyObject*&gt;* args) {
+    ostringstream msg;
+
+    if (args-&gt;size() != 0) {
+	msg &lt;&lt; "TypeError: expected 0 arguments, got "
+	    &lt;&lt; arg-&gt;size();
+	throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+    }
+
+    if (this-&gt;getVal())
+	return new PyInt(1);
+    return new PyInt(0);
+}
+
+PyObject* PyBool::__bool__(vector&lt;PyObject*&gt;* args) {
+    return this;
+}
+</pre>
+</div>
+
+<p>
+Basically, these magic functions act as type converters. The <code>__int__</code> magic
+function can coerce a <code>PyBool</code> object as a <code>PyInt</code> object whose value is 0
+or 1. If the <code>PyBool</code> object is false, its <code>PyInt</code> counterpart would
+be 0. Otherwise it would be 1. Similarly, the <code>__float__</code> magic function
+converts <code>PyBool</code> to float number.
+</p>
+
+<p>
+The <code>__eq__</code> function takes one argument. It first coerces that argument to a
+<code>PyBool</code> then compares it with itself.
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Chen Zhou</p>
+<p class="date">Created: 2016-03-23 周三 23:25</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.0.92.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10)</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
