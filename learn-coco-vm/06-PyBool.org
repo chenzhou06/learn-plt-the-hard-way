@@ -162,4 +162,5 @@ be 0. Otherwise it would be 1. Similarly, the ~__float__~ magic function
 converts ~PyBool~ to float number.
 
 The ~__eq__~ function takes one argument. It first coerces that argument to a
-~PyBool~ then compares it with itself.
+~PyBool~ then compares it with itself. The ~__bool__~ function just returns
+itself.

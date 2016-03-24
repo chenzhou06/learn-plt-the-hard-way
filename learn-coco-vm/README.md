@@ -10,5 +10,6 @@ code.
 * [x] PyException
 * [x] PyType
 * [x] PyCallable
-* [ ] PyBool
+* [x] PyBool
 * [ ] PyStr
+* [ ] PyInt
