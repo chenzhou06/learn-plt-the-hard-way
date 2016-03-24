@@ -1,0 +1,194 @@
+#+TITLE: Understanding CoCo VM: ~PyStr~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.h
+  #ifndef PYSTR_H
+  #define PYSTR_H
+
+  class PyObject;                 // TODO: ?
+
+  #include "PyCallable.h"
+  #include <string>
+  using namespace std;
+
+  class PyStr : public PyObject {
+  public:
+      PyStr(string s);
+      PyStr(const PyStr& orig);
+      virtual ~PyStr();
+      PyType* getType();
+      string toString();
+      PyStr* charAt(int index);
+
+  protected:
+      string val;
+
+      PyObject* __add__(vector<PyObject*>* args);
+      PyObject* __str__(vector<PyObject*>* args);
+      PyObject* __float__(vector<PyObject*>* args);
+      PyObject* __int__(vector<PyObject*>* args);
+      PyObject* __bool__(vector<PyObject*>* args);
+      PyObject* __funlist__(vector<PyObject*>* args); // TODO: ?
+      PyObject* __eq__(vector<PyObject*>* args);
+      PyObject* split(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+The ~PyStr~ class is basically implemented upon C++ string class with several
+magic functions added.
+
+- ~__add__~: this method can add two ~PyStr~ objects together;
+- ~__str__~: this method should return itself;
+  # TODO: Confirm this in cpp file.
+- ~__float__~: treat this ~PyStr~ object as a float.
+- ~__int__~: treat this ~PyStr~ as a integer.
+- ~__bool__~: treat this ~PyStr~ as a bool value.
+- ~__funlist__~: I have no clue about this method at this stage.
+- ~__eq__~: compare this string with another.
+
+~PyStr~ class has a special public method ~charAt~ which takes an index and
+extracts the corresponding character.
+  # TODO: I think.
+
+* Constructor and deconstructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  #include "PyStr.h"
+  #include "PyType.h"
+  #include "PyFloat.h"
+  #include "PyInt.h"
+  #include "PyBool.h"
+  #include "PyException.h"
+  #include "PyStrIterator.h"
+  #include "PyList.h"
+  #include "PyFunList.h"
+  #include <sstream>
+
+  using namespace std;
+
+  PyStr::PyStr(string s) : PyObject() { // TODO: ? ()
+      val = s;
+
+      dict["__add__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__add__);
+      dict["__float__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__float__);
+      dict["__int__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__int__);
+      dict["__bool__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__bool__);
+      dict["__funlist__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__funlist__);
+      dict["__eq__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__eq__);
+      dict["split"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::split);
+      dict["__getitem__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__getitem__);
+      dict["__len__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__len__);
+      dict["__iter__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyStr::__iter__);
+  }
+
+  PyStr::PyStr(const PyStr& orig) : PyStr(orig.val) {
+  }
+
+  PyStr::~PyStr() {}
+#+END_SRC
+
+The constructor of ~PyStr~ follows the pattern that registering a series of
+magic methods. A ~PyStr~ object by default has 2 groups of member functions. One
+group is for type casting which can coerce a ~PyStr~ object to float, int and
+bool respectively. Another group is for operations on ~PyStr~, like addition,
+comparison, measuring (length), iteration and selection. A special method
+(~split~) whose name is not surrounded by underscores is also registered.
+
+* Magic functions (Part I)
+
+This group of magic functions can take operations on string object.
+
+** Addition
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__add__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyStr* arg = (PyStr*) (*args)[0];
+      return new PyStr(this->val + arg->val);
+  }
+#+END_SRC
+
+The magic method ~__add__~ takes exactly 1 argument, otherwise an exception
+would be thrown. The result is a new ~PyStr~ object whose ~val~ field is the
+outcome of concatenating by the original ~val~ and the argument's ~val~.
+
+** Comparison
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__eq__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      PyStr* arg = (PyStr*) (*args)[0];
+
+      if (this->toString() == arg->toString())
+	  return new PyBool(true);
+
+      return new PyBool(false);
+  }
+#+END_SRC
+
+The comparison operation takes one argument then cast it to a ~PyStr~ object
+whose string representation is the object upon which the actual comparison
+actually takes place. If their string representation is the same, a ~PyBool~
+object is constructed with the boolean value of true. Otherwise, a false
+~PyBool~ object is returned.
+
+** Selection
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__getitem__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyInt* intObj = (PyInt*) (*args)[0];
+
+      int index = intObj->getVal();
+
+      if (index >= val.size()) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION, "Index out of range");
+      }
+
+      ostringstream s;
+
+      s << val[index];
+
+      return new PyStr(s.str());
+  }
+#+END_SRC
+
+   # TODO: Complete this.
+* Magic functions (Part II)
+
+This group of magic functions is related to type coercion.
+
+** ~__str__~
+** ~__float__~
+** ~__int__~
+** ~__bool__~
+
+* Other member functions
+
+** ~__funlist__~
+** ~getType~
+** ~toString~
+** ~charAt~
+** ~split~
