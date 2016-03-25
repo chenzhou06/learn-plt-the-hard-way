@@ -103,6 +103,7 @@ comparison, measuring (length), iteration and selection. A special method
 This group of magic functions can take operations on string object.
 
 ** Addition
+
 #+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
   PyObject* PyStr::__add__(vector<PyObject*>* args) {
       ostringstream msg;
@@ -123,6 +124,7 @@ would be thrown. The result is a new ~PyStr~ object whose ~val~ field is the
 outcome of concatenating by the original ~val~ and the argument's ~val~.
 
 ** Comparison
+
 #+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
   PyObject* PyStr::__eq__(vector<PyObject*>* args) {
       ostringstream msg;
@@ -175,7 +177,32 @@ object is constructed with the boolean value of true. Otherwise, a false
   }
 #+END_SRC
 
-   # TODO: Complete this.
+The ~__getitem__~ function takes exactly one argument which is expected to be a
+~PyInt~ instance. This argument would be cast to a pointer to ~PyInt~ from which
+the index value is retrieved. This member function will check boundary first,
+then return the character at that position as a ~PyStr~ object.
+
+** Counting
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__len__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return new PyInt(val.size());
+  }
+#+END_SRC
+
+The work of counting the number of characters in a string object ultimately
+leverage the C++ string's member function ~size~.
+
+** Iteration
+   # Complete this.
 * Magic functions (Part II)
 
 This group of magic functions is related to type coercion.
