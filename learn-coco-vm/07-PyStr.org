@@ -202,6 +202,25 @@ The work of counting the number of characters in a string object ultimately
 leverage the C++ string's member function ~size~.
 
 ** Iteration
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__iter__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return new PyStrIterator(this);
+  }
+#+END_SRC
+
+String object in Python is iterable. This kind of iteration is dependent on
+another class ~PyStrIterator~. The ~__iter__~ member function returns a new
+PyStrIterator based on ~this~ object.
+
    # Complete this.
 * Magic functions (Part II)
 
