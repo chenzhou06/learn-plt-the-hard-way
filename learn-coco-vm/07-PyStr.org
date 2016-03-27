@@ -221,14 +221,83 @@ String object in Python is iterable. This kind of iteration is dependent on
 another class ~PyStrIterator~. The ~__iter__~ member function returns a new
 PyStrIterator based on ~this~ object.
 
-   # Complete this.
 * Magic functions (Part II)
 
 This group of magic functions is related to type coercion.
 
 ** ~__str__~
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__str__(vector<PyObject*>* args) {
+      return this;
+  }
+#+END_SRC
+
+This member function obviously should return the object itself.
+
 ** ~__float__~
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__float__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	      msg << "TypeError: expected 0 arguments, got "
+		  << args-size();
+	      throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      double x;
+
+      try {
+	  istringstream in(this->toString());
+	  in.exceptions(ios_base::failbit | ios_base::badit);
+	  in >> x;
+	  return new PyFloat(x);
+      } catch (...) {
+	  throw new PyException(PYILLGALOPRATIONEXCEPTION,
+				"could not convert string to float: '" +
+				this->toString() +
+				"'");
+      }
+  }
+#+END_SRC
+
+To enable exceptions about i/o operation, we use the ~exceptions~ member
+method. Before returning a new ~PyFloat~ object based on a string, the
+~__float__~ method for ~PyStr~ is smart enough to check whether or not the
+string value is ready for transforming.
+
 ** ~__int__~
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::__int__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      int x;
+      try {
+	  istringstream in(this->toString());
+	  in.exceptions(ios_base::failbit | ios_base::badbit);
+	  in >> x;
+	  return new PyInt(x);
+      } catch (...) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"invalid literal for int() with base 10: '" +
+				this->toString() +
+				"'");
+      }
+  }
+#+END_SRC
+
+This function shares the same pattern with ~__float__~. All of them use i/o
+facilities to cast a string to a number.
+
 ** ~__bool__~
 
 * Other member functions
