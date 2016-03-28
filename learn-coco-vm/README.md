@@ -13,3 +13,4 @@ code.
 * [x] PyBool
 * [ ] PyStr
 * [ ] PyInt
+* [ ] PyList
