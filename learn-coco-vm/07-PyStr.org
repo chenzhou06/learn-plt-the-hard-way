@@ -300,10 +300,133 @@ facilities to cast a string to a number.
 
 ** ~__bool__~
 
+#+BEGIN_SRC c++ :tangle ./export/Pystr.cpp
+  PyObject* PyStr::__bool__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (this->toString() == "")
+	  return new PyBool(false);
+
+      return new PyBool(true);
+  }
+#+END_SRC
+
+Empty string is treated as false, otherwise a string is true as a bool.
+
+Another magic method related to this boolean thing is ~__eq__~ which compares
+two ~PyStr~ and returns true if these two objects are the same by some criteria.
+
+The implementation of ~__eq__~ for ~PyStr~ compares two objects string
+representation.
+
+#+BEGIN_SRC c++ ./export/PyStr.cpp
+  PyObject* PyStr::__eq__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      PyStr* arg = (PyStr*) (*args)[0];
+
+      if (this->toString() == arg->toString())
+	  return new PyBool(true);
+
+      return new PyBool(false);
+  }
+#+END_SRC
+
 * Other member functions
 
 ** ~__funlist__~
+
+   # TODO: ?
+
 ** ~getType~
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyStr* PyStr::getType() {
+      return PyTypes[PyStrType];
+  }
+#+END_SRC
+
 ** ~toString~
+
+#+BEGIN_SRC c++ ./export/PyStr.cpp
+  string PyStr::toString() {
+      return val;
+  }
+#+END_SRC
+
 ** ~charAt~
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyStr* PyStr::charAt(int index) {
+      if (index >= val.size()) {
+	  throw new PyException(PYSTOPITERATIONEXCEPTION, "Stop Iteration");
+      }
+
+      ostringstream s;
+
+      s << val[index];
+
+      return new PyStr(s.str());
+  }
+#+END_SRC
+
+This method do not take a vector of points to ~PyObect~, instead it directly
+take an integer.
+
 ** ~split~
+
+#+BEGIN_SRC c++ :tangle ./export/PyStr.cpp
+  PyObject* PyStr::split(vector<PyObject*>* args) {
+      string s = " \t\n";
+      if (args->size() == 1) {
+	  PyStr* sepObj = (PyStr*) (*args)[0];
+	  s = sepObj->toString();
+      }
+
+      ostringstream os;
+
+      os << s;
+
+      string delim = os.str();
+
+      vector<string> strs;
+
+      ostringstream ss;
+
+      for (int i=0; i<val.size(); i++) {
+	  if (delim.find(val[i]) != string::npos) {
+	      strs.push_back(ss.str());
+	      ss.str("");
+	  } else {
+	      ss << val[i];
+	  }
+      }
+
+      strs.push_back(ss.str());
+
+      vector<PyObject*>* strObjs = new vector<PyObjet*>();
+
+      for (int i=0; i<strs.size(); i++) {
+	  strObjs->push_back(new PyStr(strs[i]));
+      }
+
+      return new PyList(strObjs);
+  }
+#+END_SRC
+
+Ths ~split~ method actually is complicated. The first for loop split a string
+according to its argument, producing a vector of strings. The second for loop
+convert these vector of strings to pointers and store them in a vector of
+pointers to ~PyObject*~. The return value is ~PyList~ whose elements are ~PyStr~
+s.
