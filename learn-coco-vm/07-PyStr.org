@@ -45,7 +45,7 @@ magic functions added.
 - ~__str__~: this method should return itself;
   # TODO: Confirm this in cpp file.
 - ~__float__~: treat this ~PyStr~ object as a float.
-- ~__int__~: treat this ~PyStr~ as a integer.
+- ~__int__~: treat this ~PyStr~ as an integer.
 - ~__bool__~: treat this ~PyStr~ as a bool value.
 - ~__funlist__~: I have no clue about this method at this stage.
 - ~__eq__~: compare this string with another.
@@ -92,15 +92,16 @@ extracts the corresponding character.
 #+END_SRC
 
 The constructor of ~PyStr~ follows the pattern that registering a series of
-magic methods. A ~PyStr~ object by default has 2 groups of member functions. One
-group is for type casting which can coerce a ~PyStr~ object to float, int and
-bool respectively. Another group is for operations on ~PyStr~, like addition,
-comparison, measuring (length), iteration and selection. A special method
-(~split~) whose name is not surrounded by underscores is also registered.
+magic methods into a dictionary. A ~PyStr~ object by default has 2 groups of
+member functions. One group is for type casting which can coerce a ~PyStr~
+object to a float, int and bool respectively. Another group is for operations on
+~PyStr~, like addition, comparison, measuring (length), iteration and
+selection. A special method (~split~) whose name is not surrounded by
+underscores is also registered.
 
 * Magic functions (Part I)
 
-This group of magic functions can take operations on string object.
+This group of magic functions can take operations on ~PyStr~.
 
 ** Addition
 
@@ -121,7 +122,7 @@ This group of magic functions can take operations on string object.
 
 The magic method ~__add__~ takes exactly 1 argument, otherwise an exception
 would be thrown. The result is a new ~PyStr~ object whose ~val~ field is the
-outcome of concatenating by the original ~val~ and the argument's ~val~.
+outcome of concatenating the original ~val~ and the argument's ~val~.
 
 ** Comparison
 
@@ -144,7 +145,7 @@ outcome of concatenating by the original ~val~ and the argument's ~val~.
 #+END_SRC
 
 The comparison operation takes one argument then cast it to a ~PyStr~ object
-whose string representation is the object upon which the actual comparison
+whose string representation is the objective upon which the actual comparison
 actually takes place. If their string representation is the same, a ~PyBool~
 object is constructed with the boolean value of true. Otherwise, a false
 ~PyBool~ object is returned.
@@ -179,7 +180,7 @@ object is constructed with the boolean value of true. Otherwise, a false
 
 The ~__getitem__~ function takes exactly one argument which is expected to be a
 ~PyInt~ instance. This argument would be cast to a pointer to ~PyInt~ from which
-the index value is retrieved. This member function will check boundary first,
+the index is retrieved. This member function will check boundary first,
 then return the character at that position as a ~PyStr~ object.
 
 ** Counting
@@ -266,7 +267,7 @@ This member function obviously should return the object itself.
 To enable exceptions about i/o operation, we use the ~exceptions~ member
 method. Before returning a new ~PyFloat~ object based on a string, the
 ~__float__~ method for ~PyStr~ is smart enough to check whether or not the
-string value is ready for transforming.
+string value is feasible for transforming.
 
 ** ~__int__~
 
@@ -317,7 +318,7 @@ facilities to cast a string to a number.
   }
 #+END_SRC
 
-Empty string is treated as false, otherwise a string is true as a bool.
+An empty string is treated as a false, otherwise a string is a true.
 
 Another magic method related to this boolean thing is ~__eq__~ which compares
 two ~PyStr~ and returns true if these two objects are the same by some criteria.
@@ -347,7 +348,21 @@ representation.
 
 ** ~__funlist__~
 
-   # TODO: ?
+#+BEGIN_SRC c++ :tangle ./export/Pystr.cpp
+  PyObject* PyStr::__funlist__(vector<PyObject*>* args) {
+      int k;
+
+      PyFunList* result = new PyFunList();
+
+      for (k=val.size()-1; k>=0; k--) {
+	  ostringstream charstr;
+	  charstr << val[k];
+	  result = new PyFunList(new PyStr(charstr.str()), result);
+      }
+
+      return result;
+  }
+#+END_SRC
 
 ** ~getType~
 
@@ -381,8 +396,8 @@ representation.
   }
 #+END_SRC
 
-This method do not take a vector of points to ~PyObect~, instead it directly
-take an integer.
+This method do not take a vector of points to ~PyObect~ as arguments, instead it
+directly take an integer.
 
 ** ~split~
 
@@ -425,8 +440,7 @@ take an integer.
   }
 #+END_SRC
 
-Ths ~split~ method actually is complicated. The first for loop split a string
+Ths ~split~ method actually is complicated. The first ~for~ loop split a string
 according to its argument, producing a vector of strings. The second for loop
-convert these vector of strings to pointers and store them in a vector of
-pointers to ~PyObject*~. The return value is ~PyList~ whose elements are ~PyStr~
-s.
+convert these vector of strings to pointers and store them in a vector. The
+return value is ~PyList~ whose elements are ~PyStr~ s.
