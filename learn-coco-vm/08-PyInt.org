@@ -46,3 +46,127 @@ The ~PyInt~ class follows the standard pattern of defining an ~PyObject~ in the
 CoCo VM. Due to the fact that ~__add__~, ~__sub__~, and ~__mul__~ ... magic
 methods are expected to be implemented for multiple kinds of ~PyObject~, a
 ~virtual~ should be added to their definition's signature.
+* Constructor and Destructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyInt::PyInt(int val): PyObject() {
+      this->val = val;
+      dict["__add__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__add__);
+      dict["__sub__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__sub__);
+      dict["__mul__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__mul__);
+      dict["__floordiv__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__floordiv__);
+      dict["__truediv__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__truediv__);
+      dict["__eq__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__eq__);
+      dict["__gt__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__gt__);
+      dict["__lt__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__lt__);
+      dict["__ge__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__ge__);
+      dict["__le__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__le__);
+      dict["__float__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__float__);
+      dict["__int__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__int__);
+      dict["__bool__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyInt::__bool__);
+  }
+
+  PyInt::PyInt(const PyInt& orig): PyInt(orig.val) {
+  }
+
+  PyInt::~PyInt() {
+  }
+#+END_SRC
+
+The constructor as always register a bunch of magic methods into a
+dictionary. There are three kinds of functions registered here.
+
+- Arithmetic operations:
+  - Addiction
+  - Subtraction
+  - Division (floor and true)
+- Comparison
+  - Equality
+  - Greater than
+  - Less than
+  - Greater than or equal to
+  - Less than or equal to
+- Type casting
+  - To float
+  - To int
+  - To bool
+
+* Arithmetic operations
+
+** Addition
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__add__(vector<PyObject*>* args) {
+      PyInt* x;
+      PyFloat* y;
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, god "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyObject* arg = (*args)[0];
+
+      switch (args->getType()->typeId()) {
+      case PyIntType:
+	  x = (PyInt*) arg;
+	  return new PyInt(this->val + x->val);
+      case PyFloatType:
+	  y = (PyFloat*) arg;
+	  return new PyFloat(this->val + y->getVal());
+      default:
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Invalid types for +: int and " +
+				arg->getType()->toString());
+      }
+  }
+#+END_SRC
+
+When a ~PyInt~ is added by another number, float or integer, the ~__add__~
+function would check the type of the argument by ~arg->getType()->typeId~. A
+concise switch statement delivers the argument to different branch according to
+its type. The type of the result after addition is based on the argument. If
+this ~PyInt~ is added to a ~PyInt~, the result is a ~PyInt~. If this ~PyInt~ is
+added to a ~PyFloat~, the result is a ~PyFloat~. All of types other than these
+two could cause an error when they are mistakenly added to a ~PyInt~.
+
+** Subtraction
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__sub__(vector<PyObject*>* args) {
+      PyInt* x;
+      PyFloat* y;
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyObject* arg = (*args)[0];
+
+      switch (arg->getType()->typeId()) {
+      case PyIntType:
+	  x = (PyInt*) arg;
+	  return new PyInt(this->val + x->val);
+      case PyFloatType:
+	  y = (PyFloat*) arg;
+	  return new PyFloat(this->val + y->getVal());
+      default:
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"invalid types for -: int and " +
+				arg->getType()->toString());
+      }
+  }
+#+END_SRC
+
+Subtraction's implementation is similar to that of addition. The explanation
+needs not to be repeated here again.
+
+* Basic methods
+   # toString, getVal,
