@@ -81,6 +81,7 @@ dictionary. There are three kinds of functions registered here.
 - Arithmetic operations:
   - Addiction
   - Subtraction
+  - Multiplication
   - Division (floor and true)
 - Comparison
   - Equality
@@ -167,6 +168,132 @@ two could cause an error when they are mistakenly added to a ~PyInt~.
 
 Subtraction's implementation is similar to that of addition. The explanation
 needs not to be repeated here again.
+
+** Multiplication
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__mul__(vector<PyObject*>* args) {
+      PyInt* x;
+      PyFloat* y;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyObject* arg = (*args)[0];
+
+      switch (arg->getType()->typeId()) {
+      case PyIntType:
+	  x = (PyInt*) arg;
+	  return new PyInt(this->val * x->val);
+      case PyFloatType:
+	  y = (PyFloat*) arg;
+	  return new PyFloat(this->val * y->getVal());
+      default:
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Invalid types for *: int and " +
+				arg->getType()->toString());
+      }
+  }
+#+END_SRC
+
+Multiplication between a pair of ~PyInt~ shares the same structure that addition
+and subtraction have.
+
+** Floor division and true division
+
+The floor division in Python is denoted as double slashes ~//~, which return
+quotient of two numbers. If one of the numbers is float, the result is a float
+too. If both of them are integers, the result is an integer.
+
+For example:
+
+#+BEGIN_SRC python
+  3 // 2
+  #=> 1
+  3.1 // 3
+  #=> 1.0
+#+END_SRC
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__floordiv__(vector<PyObject*>* args) {
+      PyInt* x;
+      PyFloat* y;
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyObject* arg = (*args)[0];
+
+      switch (arg->getType()->typeId()) {
+      case PyIntType:
+	  x = (PyInt*) arg;
+	  if (x->val == 0)
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "ZeroDivisionerror: integer division or modulo by zero");
+	  return new PyInt(this->val / x->val);
+      case PyFloatType:
+	  y = (PyFloat*) arg;
+	  if (y->getVal() == 0)
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "ZeroDivisionerror: integer division or modulo by zero");
+	  return new PyFloat(floor(this->val / y->getVal()));
+      default:
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Invalid types for *: int and " +
+				arg->getType()->toString());
+      }
+  }
+#+END_SRC
+
+The floor division takes a floor operation on its result before final returning
+a ~PyObject~. The ~floor~ function is defined in ~math.h~, which could be
+included by ~cmath~ as well in c++11.
+
+The other division ~__truediv__~ returns the result as we expected in a
+calculator. However, the type of the result from this kind of division is always
+float no matter what the types of dividend and divisor are.
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__truediv__(vector<PyObject*>* args) {
+      PyInt* x;
+      PyFloat* y;
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyObject* arg = (*args)[0];
+
+      switch (arg->getType()->typeId()) {
+      case PyIntType:
+	  x = (PyInt*) arg;
+	  if (x->val == 0)
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "ZeroDivisionerror: integer division or modulo by zero");
+	  return new PyFloat(this->val / x->val);
+      case PyFloatType:
+	  y = (PyFloat*) arg;
+	  if (y->getVal() == 0)
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "ZeroDivisionError: integer division or modulo by zero");
+	  return new PyFloat(this->val / y->getVal());
+      default:
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Invalid types for *: int and " +
+				arg->getType()->toString());
+      }
+  }
+#+END_SRC
 
 * Basic methods
    # toString, getVal,
