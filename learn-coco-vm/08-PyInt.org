@@ -295,5 +295,102 @@ float no matter what the types of dividend and divisor are.
   }
 #+END_SRC
 
+* Comparison
+
+All comparison operations are the same.
+
+** Equality
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__eq__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyInt* other = (PyInt*) (*args)[0];
+
+      return new PyBool(val == other->val);
+  }
+#+END_SRC
+
+~__eq__~ takes exactly one ~PyObject~, compares their values and returns a
+~PyBool~.
+
+** Greater than
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__gt__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyInt* other = (PyInt*) (*args)[0];
+
+      return new PyBool(val > other->val);
+  }
+#+END_SRC
+
+** Less than
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__lt__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyInt* other = (PyInt*) (*args)[0];
+
+      return new PyBool(val < other->val);
+  }
+#+END_SRC
+
+** Greater than or equal to
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__le__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyInt* other = (PyInt*) (*args)[0];
+
+      return new PyBool(val <= other->val);
+  }
+#+END_SRC
+
+** Less than or equal to
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__le__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyInt* other = (PyInt*) (*args)[0];
+
+      return new PyBool(val <= other->val);
+  }
+#+END_SRC
+
 * Basic methods
    # toString, getVal,
