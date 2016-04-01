@@ -1,0 +1,54 @@
+#+TITLE: Understanding CoCo VM: ~PyNone~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyNone.h
+  #ifndef PYNONE_H
+  #define PYNONE_H
+
+  #include "PyObject.h"
+
+  class PyNone: public PyObject {
+  public:
+      PyNone();
+      PyNone(const PyNone& orig);
+      virtual ~PyNone();
+      PyType* getType();
+      string toString();
+
+  protected:
+  };
+
+  #endif
+#+END_SRC
+
+~PyNone~ contains nothing. It is just a special value for void return value of a
+function in CoCo VM.
+
+* Implementation
+
+#+BEGIN_SRC c++ :tangle ./export/PyNone.cpp
+  #include "PyNone.h"
+  #include "PyType.h"
+  #include "PyStr.h"
+
+  PyNone::PyNone(): PyObject() {
+  }
+
+  PyNone::PyNone(const PyNone& orig) {
+  }
+
+  PyNone::~PyNone() {
+  }
+
+  PyType* PyNone::getType() {
+      return PyTypes[PyNoneType];
+  }
+
+  string PyNone::toString() {
+      return "None";
+  }
+#+END_SRC
+
+~PyNone~ has little work to do except returning its type and printing ~None~.
