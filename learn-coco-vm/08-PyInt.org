@@ -359,7 +359,7 @@ All comparison operations are the same.
 ** Greater than or equal to
 
 #+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
-  PyObject* PyInt::__le__(vector<PyObject*>* args) {
+  PyObject* PyInt::__ge__(vector<PyObject*>* args) {
       ostringstream msg;
 
       if (args->size() != 1) {
@@ -370,7 +370,7 @@ All comparison operations are the same.
 
       PyInt* other = (PyInt*) (*args)[0];
 
-      return new PyBool(val <= other->val);
+      return new PyBool(val >= other->val);
   }
 #+END_SRC
 
@@ -392,5 +392,63 @@ All comparison operations are the same.
   }
 #+END_SRC
 
+* Type Casting
+
+~PyInt~ can act as float, bool, and also int.
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  PyObject* PyInt::__float__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size9() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return new PyFloat(this->getVal());
+  }
+
+  PyObject* PyInt::__int__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return this;
+  }
+
+  PyObject* PyInt::__bool__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (this->getVal() == 0)
+	  return new PyBool(false);
+
+      return new PyBool(true);
+  }
+#+END_SRC
+
+Only zero is false, other values are all treated as true.
+
 * Basic methods
-   # toString, getVal,
+
+#+BEGIN_SRC c++ :tangle ./export/PyInt.cpp
+  int PyInt::getVal() {
+      return val;
+  }
+
+  string PyInt::toString() {
+      stringstream ss;
+      ss << val;
+      return ss.str();
+  }
+#+END_SRC
