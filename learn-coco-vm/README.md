@@ -12,5 +12,6 @@ code.
 * [x] PyCallable
 * [x] PyBool
 * [x] PyStr
-* [ ] PyInt
+* [x] PyInt
 * [ ] PyList
+* [ ] PyNone
