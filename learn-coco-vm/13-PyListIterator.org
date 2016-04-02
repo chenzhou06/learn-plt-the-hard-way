@@ -1,0 +1,112 @@
+#+TITLE: Understanding CoCo VM: ~PyListIterator~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+PyListiterator provides an iterator interface by the ~__next__~ magic
+method. The ~__iter__~ method returns an iterator. If ~__iter__~ is called on an
+iterator, this iterator itself would be returned.
+
+#+BEGIN_SRC c++ :tangle ./export/PyListIterator.h
+  #ifndef PYLISTITERATOR_H
+  #define PYLISTITERATOR_H
+
+  #include "PyObject.h"
+  #include "PyType.h"
+  #include "PyList.h"
+  #include <string>
+  using namespace std;
+
+  class PyListIterator: public PyObject {
+  public:
+      PyListIterator(PyList* lst);
+      virtual ~PyListIterator();
+
+      PyType* getType();
+      string toString();
+
+  protected:
+      PyList* lst;
+      int index;
+      virtual PyObject* __iter__(vector<PyObject*>* args);
+      virtual PyObject* __next__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+* Constructor and others
+
+~PyListIterator~ has two properties: ~index~ and ~lst~. The ~index~ is the
+position this iterator currently points at. The ~lst~ is the data upon which the
+iterator works.
+
+#+BEGIN_SRC c++ :tangle ./export/PyListIterator.cpp
+  #include "PyListIterator.h"
+  #include "PyException.h"
+  #include <sstream>
+  #include <string>
+
+  using namespace std;
+
+  PyListIterator::PyListIterator(PyList* lst): PyObject() {
+      this->index = 0;
+      this->lst = lst;
+
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyListIterator::__iter__);
+      dict["__next__"] =
+	  (PyObject* (PyObject::*)(vector<PyObje t*>*)) (&PyListIterator::__next__);
+  }
+
+  PyListIterator::~PyListIterator() {
+  }
+#+END_SRC
+
+
+* Type and string
+
+#+BEGIN_SRC c++ :tangle ./export/PyListIterator.cpp
+  PyType* PyListIterator::getType() {
+      return PyTypes[PyListIteratorType];
+  }
+
+  string PyListIterator::toString() {
+      ostringstream s;
+
+      s << "<list_iterator object at " << this << ">";
+      return s.str();
+  }
+#+END_SRC
+
+* Next and iter
+
+#+BEGIN_SRC c++ :tangle ./export/PyListIterator.cpp
+  PyObject* PyListIterator::__iter__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return this;
+  }
+
+  PyObject* PyListIterator::__next__(vector<PyObject*>* args) {
+      ostringstream msg;
+      if (args->size() ! = 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION， msg.str());
+      }
+      return lst->getVal(index++);
+  }
+#+END_SRC
+
+The ~__iter__~ method returns itself since it's already an iterator. The
+~__next__~ method returns a pointer whose position is specified by the
+~index~. At the same time, the ~index~ itself increments by one, so next time
+when the ~__next__~ method is invoked the ~index~ is pointed at the next item in
+the ~lst~.
