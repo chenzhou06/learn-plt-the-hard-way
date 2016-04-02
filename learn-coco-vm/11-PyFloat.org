@@ -1,0 +1,150 @@
+#+TITLE: Understanding CoCo VM: ~PyFloat~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyFloat.h
+  #ifndef PYFLOAT_H
+  #define PYFLOAT_H
+
+  #include "PyCallable.h"
+
+  class PyFloat: public PyObject {
+  public:
+      PyFloat(double f);
+      PyFloat(const PyFloat& orig);
+      virtual ~PyFloat();
+      string toString();
+      PyType* getType();
+      double getVal();
+
+  protected:
+      double val;
+
+      virtual PyObject* __add__(vector<PyObject*>* args);
+      virtual PyObject* __float__(vector<PyObject*>* args);
+      virtual PyObject* __int__(vector<PyObject*>* args);
+      virtual PyObject* __bool__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+~PyFloat~ has no division and multiplication methods. Comparison operations like
+~__eq__~, ~__gt__~, ~__lt__~ are absent as well. And ~PyFloat~ is actually
+double in CoCo VM.
+
+* Constructor and others
+
+#+BEGIN_SRC c++ :tangle ./export/PyFloat.cpp
+  #include "PyFloat.h"
+  #include "PyStr.h"
+  #include "PyInt.h"
+  #include "PyType.h"
+  #include "PyBool.h"
+  #include "PyException.h"
+
+  #include <cstdio>
+  #include <sstream>
+  using namespace std;
+
+  PyFloat::PyFloat(double f): PyObject() {
+      val = f;
+      dict["__add__"] = (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFloat::__add__);
+      dict["__float__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFloat::__float__);
+      dict["__int__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFloat::__int__);
+      dict["__bool__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFloat::__bool__);
+  }
+
+  PyFloat::PyFloat(const PyFloat& orig): PyFloat(orig.val) {
+  }
+
+  PyFloat::~PyFloat() {
+  }
+#+END_SRC
+
+** ~toString~ and ~getType~
+
+#+BEGIN_SRC c++ :tangle ./export/PyFloat.cpp
+  string PyFloat::toString() {
+      char buffer[50];
+      sprintf(buffer, "%1.1f", val);
+      stringstream ss;
+      ss << buffer;
+      return ss.str();
+  }
+
+  PyType* PyFloat::getType() {
+      return PyTypes[PyFloatType];
+  }
+#+END_SRC
+
+** Arithmetic operations
+
+*** ~__add__~
+
+#+BEGIN_SRC c++ :tangle ./export/PyFloat.cpp
+  PyObject* PyFloat::__add__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args-size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyFloat* arg2 = (PyFloat*)(*args)[0];
+      return new PyFloat(this->val + arg2->val);
+  }
+#+END_SRC
+
+** Types
+
+#+BEGIN_SRC c++ :tangle ./export/PyFloat.cpp
+  PyObject* PyFloat::__float__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return this;
+  }
+
+  PyObject* PyFloat::__int__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      int x;
+
+      x = (int) this->getVal();
+      return new PyInt(x);
+  }
+
+  PyObject* PyFloat::__bool__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (this->getVal() == 0.0)
+	  return new PyBool(false);
+
+      return new PyBool(true);
+  }
+#+END_SRC
+
+Every ~PyFolat~ except for ~0.0~ is a true.

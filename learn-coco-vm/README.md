@@ -13,5 +13,6 @@ code.
 * [x] PyBool
 * [x] PyStr
 * [x] PyInt
-* [ ] PyList
-* [ ] PyNone
+* [x] PyList
+* [x] PyNone
+* [ ] PyFloat
