@@ -1,0 +1,157 @@
+#+TITLE: Understanding CoCo VM: ~PyTuple~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+Tuple is similar to list in Python except that tuple is immutable.
+
+#+BEGIN_SRC c++ :tangle ./export/PyTuple.h
+  #ifndef PYTUPLE_H
+  #define PYTUPLE_H
+
+  #include "PyObject.h"
+
+  class PyTuple: publc PyObject {
+  public:
+      PuTuple(vector<PyObject*>* lst);
+      virtual ~PyTuple();
+      PyType* getType();
+      string toString();
+      PyObject* getVal(int index);
+      int size();
+
+  protected:
+      vector<PyObject*> data;
+
+      virtual PyObject* __getitem__(vector<PyObject*>* args);
+      virtual PyObject* __len__(vector<PyObject*>* args);
+      virtual PyObject* __iter__(vector<PyObject*>* args);
+  };
+  #endif
+#+END_SRC
+
+* Constructor and others
+
+** Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyTuple.cpp
+  #include "PyTuple.h"
+  #include "PyTupleIterator.h"
+  #include "PyException.h"
+  #include "PyInt.h"
+  #include "PyType.h"
+  #include <sstream>
+
+  using namespace std;
+
+  PyTuple::PyTuple(vector<PyObject*>* lst): PyObject() {
+      data = *lst;
+
+      dict["__getitem__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyTuple::__getitem__);
+      dict["__len__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyTuple::__len__);
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyTuple::__iter__);
+  }
+
+  PyTuple::~PyTuple() {
+  }
+#+END_SRC
+
+** Type, value, string, and size
+
+#+BEGIN_SRC c++ :tangle ./export/PyTuple.cpp
+  PyType* PyTuple::getType() {
+      return PyTypes[PyTupleType];
+  }
+
+  PyType* PyTuple::getVal(int index) {
+      if (index >= data.size()) {
+	  throw new PyException(PYSTOPITERATIONEXCEPTION,
+				"Stop Iteration");
+      }
+      return data[index];
+  }
+
+
+  int PyTuple::size() {
+      return data.size();
+  }
+
+  string PyTuple::toString() {
+      ostringstream s;
+      s << "(";
+      for (int i=0; i<data.size(); i++) {
+	  s << data[i]->toString();
+	  if (i < data.size()-1)
+	      s << ", ";
+      }
+
+      s << ")";
+      return s.str();
+  }
+#+END_SRC
+
+** Magic methods
+
+~PyTuple~ has three magic methods which are ~__getitem__~, ~__len__~, and
+~__iter__~.
+
+*** ~__getitem__~
+
+#+BEGIN_SRC c++ :tangle ./export/PyTuple.cpp
+  PyObject* PyTuple::__getitem__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+      }
+      PyInt* intObj = (PyInt*) (*args)[0];
+      int index = intObj->getVal();
+
+      if (index >= data.size()) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Index out of range.");
+      }
+      return data[index];
+  }
+#+END_SRC
+
+I'm not sure why the author did not use the ~getVal~ function in the
+~__getitem__~ function. This piece of code looks like redundant.
+
+*** ~__len__~
+
+This function returns the number of elements a tuple has.
+
+#+BEGIN_SRC c++ :tangle ./export/PyTuple.cpp
+  PyObject* PyTuple::__len__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      return new PyInt(data.size());
+  }
+#+END_SRC
+
+*** ~__iter__~
+
+Return a iterator based on a tuple.
+
+#+BEGIN_SRC c++ :tangle ./export/PyTuple.cpp
+  PyObject* PyTuple::__iter__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      return new PyTupleIterator(this);
+  }
+#+END_SRC
