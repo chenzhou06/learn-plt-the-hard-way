@@ -1,0 +1,145 @@
+#+TITLE: Understanding CoCo VM: ~PyRange~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyRange.h
+  #ifndef PYRANGE_H
+  #define PYRANGE_H
+
+  #include "PyObject.h"
+  #include <vector>
+  using namespace std;
+
+  class PyRange: public PyObject {
+  public:
+      PyRange(int start, int stop, int increment);
+      virtual ~PyRange();
+      PyType* getType();
+
+      PyObject* indexOf(int index);
+      string toString();
+
+  protected:
+      int start, stop, increment;
+      virtual PyObject* __iter__(vector<PyObject*>* args);
+      virtual PyObject* __len__(vector<PyObject*>* args);
+      virtual PyObject* __getitem(vector<PyObject*>* args);
+      virtual PyObject* __list__(vector<PyObject*>* args);
+  };
+#+END_SRC
+
+The ~PyRange~ object implements lazy evaluation of ranges of *integers*.
+
+* Constructor and others
+
+#+BEGIN_SRC c++ :tangle ./export/PyRange.cpp
+  #include "PyRange.h"
+  #include "PyInt.h"
+  #include "PyType.h"
+  #include "PyList.h"
+  #include "PyRangeIterator.h"
+  #include "PyException.h"
+  #include <sstream>
+  using namespace std;
+
+  PyRange::PyRange(int start, int stop, int increment): PyObject() {
+      this->start = start;
+      this->stop = stop;
+      this->increment = increment;
+
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyRange::__iter__);
+      dict["__len__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyRange::__len__);
+      dict["__getitem__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyRange::__getitem__);
+      dict["__list__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyRange::__list__);
+  }
+
+  PyRange::~PyRange() {
+  }
+#+END_SRC
+
+* Type, string and length
+
+#+BEGIN_SRC c++ :tangle ./export/PyRange.cpp
+  PyType* PyRange::getType() {
+      return PyTypes[PyRangeTypeId];
+  }
+
+  string PyRange::toString() {
+      ostringstream s;
+      s << "range(" << start << "," << stop << "," << increment << ")";
+      return s.str();
+  }
+
+  PyObject* PyRange::__len__(vector<PyObject*>* args) {
+      return new PyInt((stop - start) / increment);
+  }
+#+END_SRC
+
+~PyRange~ as a string is an array of 3 numbers which stand for begining, ending
+and increment.
+
+
+* Get items
+
+The ~__iter__~ method returns a range iterator based on the original range
+object.  The ~__list__~ method transforms this range class to a list which
+contains every ~PyInt~ object from ~start~ to ~stop~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyRange.cpp
+  PyObject* PyRange::__iter__(vector<PyObject*>* args) {
+      return new PyRangeIterator(this);
+  }
+
+  PyObject* PyRange::__list__(vector<PyObject*>* args) {
+      vector<PyObject*>* largs = new vector<PyObject*>();
+      int k;
+      for (k=start; k<stop; k=k+increment) {
+	  largs->push_back(new PyInt(k));
+      }
+      return new PyList(largs);
+  }
+#+END_SRC
+
+The ~__getitem__~ method is based on the ~indexOf~ method. ~__getItem__~ first
+transforms its argument into an integer which is the index of the item we want,
+then invokes the ~indexOf~ method with that index generated in the first step.
+
+The ~indexOf~ method takes an integer on which a formula is used to calculate
+the actual index. There are two cases where the final index is illegal. First,
+the increment is positive but the final index is beyond the stop value, which
+means the index is out of range. Second, the increment is negative, so the
+numbers of the range is decreasing but the index falls below the stop value,
+which also means the index goes beyond the range.
+
+#+BEGIN_SRC c++ :tangle ./export/PyRange.cpp
+  PyObject* PyRange::__getitem__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      PyInt* indexObj = (PyInt*) (*args)[0];
+      int index = indexObj->getVal();
+
+      return indexOf(index);
+  }
+
+  PyObject* PyRange::indexOf(int index) {
+      int val = start + index * increment;
+      if (increment > 0 && val >= stop) {
+	  throw new PyException(PYSTOPITERATIONEXCEPTION, "Stop Iteration");
+      }
+      if (increment < 0 && val <= stop) {
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, "Stop Iteration");
+      }
+
+      return new PyInt(start + increment*index);
+  }
+#+END_SRC

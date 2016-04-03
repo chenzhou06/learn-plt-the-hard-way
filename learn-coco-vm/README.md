@@ -15,4 +15,10 @@ code.
 * [x] PyInt
 * [x] PyList
 * [x] PyNone
-* [ ] PyFloat
+* [x] PyFloat
+* [x] PyTuple
+* [ ] PyRange
+* [ ] Iterators
+  - [x] PyStrIterator
+  - [x] PyListIterator
+  - [ ] PyTupleIterator
