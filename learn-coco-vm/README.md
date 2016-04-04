@@ -17,8 +17,8 @@ code.
 * [x] PyNone
 * [x] PyFloat
 * [x] PyTuple
-* [ ] PyRange
+* [x] PyRange
 * [ ] Iterators
   - [x] PyStrIterator
   - [x] PyListIterator
-  - [ ] PyTupleIterator
+  - [x] PyTupleIterator
