@@ -1,0 +1,97 @@
+#+TITLE: Understanding CoCo VM: ~PyRangeIterator~
+#+AUTHOR: Chen Zhou
+
+The ~PyrangeIterator~ lazily returns only the next needed integer in the range
+iteration.
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeIterator.h
+  #ifndef PYRANGEITERATOR_H
+  #define PYRANGEITERATOR_H
+
+  #include "PyType.h"
+  #include "PyRange.h"
+
+  class PyRangeIterator: public PyObject {
+  public:
+      PyRangeIterator(PyRange* rangeObj);
+      virtual ~PyRangeIterator();
+      PyType* getType();
+      string toString();
+
+  protected:
+      PyRange* rangeObj;
+      int index;
+
+      virtual PyObject* __iter__(vector<PyObject*>* args);
+      virtual PyObject* __next__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+As usual, this iterator has ~__iter__~ and ~__next__~ methods as well.
+
+* Constructor and others
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeIterator.cpp
+  #include "PyRangeIterator.h"
+  #include "PyException.h"
+  #include <sstream>
+  using namespace std;
+
+  PyRangeIterator::PyRangeIterator(PyRange* obj): PyObject() {
+      rangeObj = obj;
+      index = 0;
+
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyRangeIterator::__iter__);
+      dict["__next__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyRangeIterator::__next__);
+  }
+
+  PyRangeIterator::~PyRangeIterator() {
+  }
+#+END_SRC
+
+* Type and string
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeIterator.cpp
+  PyType* PyRangeIterator::getType() {
+      return PyTypes[PyRangeIteratorType];
+  }
+
+  string PyRangeIterator::toString() {
+      ostringstream s;
+      s << "<range_iterator object at " << this << ">";
+      return s.str();
+  }
+#+END_SRC
+
+* Iter and next
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeIterator.cpp
+  PyObject* PyRangeIterator::__iter__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      return this;
+  }
+
+  PyObject* PyRangeIterator::__next__(vector<PyObject*>* args) {
+      ostringstream msg;
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      PyObject* result = this->rangeObj->indexOf(index);
+      index++;
+      return result;
+  }
+#+END_SRC
