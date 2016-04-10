@@ -1,0 +1,64 @@
+#+TITLE: Understanding CoCo VM: ~PyFunList~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+~PyFunList~ objects are lists where the head and the tail are joined together to
+form a list in the same manner that most functional languages implement
+lists. They are different from the previously defined ~PyList~ objects by
+dividing a list to head and tail, thus gaining an efficiency of O(1) head and
+tail operations. However, this kind of list loses constant index querying. The
+elements in a ~PyFunList~ are separately defined.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.h
+  #ifndef PYFUNLIST_H
+  #define PYFUNLIST_H
+
+  #include "PyObject.h"
+  #include "PyType.h"
+  #include <vector>
+  using namespace std;
+
+  class PyFunListElm;
+
+  class PyFunList: public PyObject {
+  public:
+      PyFunList(vector<PyObject*>* lst);
+      PyFunList();
+      PyFunList(PyObject* head, PyFunList* tail);
+      PyFunList(PyFunListElm* elm);
+      virtual ~PyFunList();
+      PyType* getType();
+      string toString();
+      PyObject* getHead();
+      PyFunList* getTail();
+      PyFunListElm* getElm();
+
+  protected:
+      PyFunListElm* data;
+      virtual PyObject* __getitem__(vector<PyObject*>* args);
+      virtual PyObject* __len__(vector<PyObject*>* args);
+      virtual PyObject* __iter__(vector<PyObject*>* args);
+      virtual PyObject* __add__(vector<PyObject*>* args);
+      virtual PyObject* head(vector<PyObject*>* args);
+      virtual PyObject* tail(vector<PyObject*>* args);
+      virtual PyObject* concat(vector<PyObject*>* args);
+  };
+
+  class PyFunListElm {
+  public:
+      PyFunListElm(PyObject* head, PyFunListElm* tail);
+      ~PyFunListElm();
+      string toString();
+      PyObject* getHead();
+      PyFunListElm* getTail();
+      int getLen();
+
+  private:
+      PyObject* head;
+      PyFunListElm* tail;
+      int len;
+  };
+
+  #endif
+#+END_SRC
