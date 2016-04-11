@@ -62,3 +62,355 @@ elements in a ~PyFunList~ are separately defined.
 
   #endif
 #+END_SRC
+
+* Constructor and else
+
+** ~PyFunListElm~
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  #include "PyFunList.h"
+  #include "PyFunListIterator.h"
+  #include "PyException.h"
+  #include "PyNone.h"
+  #include "PyInt.h"
+  #include "PyStack.h"
+  #include "PyStr.h"
+  #include <sstream>
+  using namespace std;
+
+  PyFunListElm::PyFunListElm(PyObject* head, PyFunListElm* tail) {
+      this->head = head;
+      this->tail = tail;
+      if (tail != NULL) {
+	  len = 1 + tail->len;
+      } else {
+	  len = 1;
+      }
+  }
+
+  PyFunListElm::~PyFunListElm() {
+      try {
+	  delete head;
+      } catch (...) {}
+      try {
+	  delete tail;
+      } catch (...) {}
+  }
+#+END_SRC
+
+The constructor of ~PyFunListElm~ recursively takes another ~PyFunListEm~ as its
+tail. For the base condition, the tail is a ~NULL~ pointer. The constructor
+automatically calculates its length. If the tail is ~NULL~ then its length is
+one, otherwise it should be the length of its tails plus one.
+
+*** String and access
+
+Converting a ~PyFunList~ to a string will recursively convert its tails to strings.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  string PyFunListElm::toString() {
+      ostringstream s;
+
+      s << head->toString();
+      if (tail != NULL) {
+	  s << ", " << tail->toString();
+      }
+      return s.str();
+  }
+#+END_SRC
+
+The head of a ~PyFunListElm~ is a ~PyObject~, but the tail is not any other type
+of ~PyObject~, it just another ~PyFunListElm~. So that ~tail~ obtained from a
+~PyFunListElm~ has its own ~tail~ again. This chain can continue until the final
+tail is ~NULL~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyObject* PyFunListElm::getHead() {
+      return head;
+  }
+
+  PyFunListElm* PyFunListElm::getTail() {
+      return tail;
+  }
+
+  int PyFunListElm::getLen() {
+      return len;
+  }
+#+END_SRC
+
+
+
+** ~PyFunList~
+
+There are four ways to construct a ~PyFunList~.
+
+- First, construct from a vector of ~PyObject~. This method builds a
+  ~PyFunListElm~ from those ~PyObject~, and takes it as the data field.
+- Second, construct an empty ~PyFunList~ whose data field just is a ~NULL~ pointer.
+- Third, concatenate one object to another ~PyFunList~.
+- Forth, construct from a ~PyFunListElm~ which will become the ~PyFunList~'s data.
+
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyFunList::PyFunList(vector<PyObject*>* lst): PyObject() {
+      int k;
+      PyFunListElm * tmp = NULL;
+      for (k=lst->size()-1; k>=0; k--) {
+	  tmp = new PyFunListElm((*lst)[k], tmp);
+      }
+      data = tmp;
+
+      dict["__getitem__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__getitem__);
+      dict["__len__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__len__);
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__iter__);
+      dict["__add__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__add__);
+      dict["head"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::head);
+      dict["tail"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::tail);
+      dict["concat"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::concat);
+  }
+
+  PyFunList::PyFunList(): PyObject() {
+      data = NULL;
+
+      dict["__getitem__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__getitem__);
+      dict["__len__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__len__);
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__iter__);
+      dict["__add__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__add__);
+      dict["head"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::head);
+      dict["tail"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::tail);
+      dict["concat"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::concat);
+  }
+
+  PyFunList::PyFunList(PyObject* h, PyFunList* t): PyObject() {
+      data = new PyFunListElm(h, t->getElm());
+
+      dict["__getitem__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__getitem__);
+      dict["__len__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__len__);
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__iter__);
+      dict["__add__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__add__);
+      dict["head"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::head);
+      dict["tail"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::tail);
+      dict["concat"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::concat);
+  }
+
+  PyFunList::PyFunList(PyFunListElm* elm): PyObject() {
+      data = elm;
+
+      dict["__getitem__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__getitem__);
+      dict["__len__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__len__);
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__iter__);
+      dict["__add__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::__add__);
+      dict["head"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::head);
+      dict["tail"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::tail);
+      dict["concat"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunList::concat);
+  }
+
+  PyFunList::~PyFunList() {
+  }
+#+END_SRC
+
+*** String and Type
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyType* PyFunList::getType() {
+      return PyTypes[PyFunListType];
+  }
+
+  string PyFunList::toString() {
+      ostringstream s;
+      s << "[";
+      if (data != NULL)
+	  s << data->toString();
+
+      s << "]";
+      return s.str();
+  }
+#+END_SRC
+
+*** Magic methods
+
+**** Get item
+
+To get the nth element in a ~PyFunList~, the ~__getitem__~ method iterates the
+tail parts to get the nth object.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyObject* PyFunList::__getitem__(vector<PyObject*>* args) {
+      ostringstream msg;
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      if (data == NULL) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Attempt to index an empty funlist.");
+      }
+      PyInt * intObj = (PyInt*) (*args)[0];
+      int index = intObj->getVal();
+      if (index >= data->getLen()) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Index out of range on funlist.");
+      }
+
+      PyFunListElm* tmp = data;
+
+      for (int k=0; k<index; k++) {
+	  tmp = tmp->geTail():
+      }
+      return tmp->getHead();
+  }
+#+END_SRC
+
+**** Length
+
+The length of a ~PyFunList~ is depend on its data ~PyFunListElm~ object.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyObject* PyFunList::__len__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (data == NULL) {
+	  return new PyInt(0);
+      }
+
+      return new PyInt(data->getLen());
+  }
+#+END_SRC
+
+**** Addition
+
+The ~__add__~ method can overload the '+' operator for combining two
+PyFunLists. It first pushes all its own tails to a ~PyStack~. Then one by one
+the tails are popped out to construct a ~PyFunListElm~. Finally, a ~PyFunList~
+is built from that ~PyFunListElm~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyObject* PyFunList::__add__(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 1) {
+	  msg << "TypeError: expected 1 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      PyFunList* other = (PyFunList*)(*args)[0];
+      PyStack<PyObject*> tmpStack;
+      PyFunListElm* tmp = data;
+      PyObject* val;
+
+      while (tmp!=NULL) {
+	  tmpStack.push(tmp->getHead());
+	  tmp = tmp->getTail();
+      }
+
+      tmp = other->data;
+
+      while (!tmpStack.isEmpty()) {
+	  val = tmpStack.pop();
+	  tmp = new PyFunListElm(val, tmp);
+      }
+      return new PyFunList(tmp);
+  }
+#+END_SRC
+
+*** Others
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
+  PyFunListElm* PyFunList::getElm() {
+      return data;
+  }
+
+  PyObject* PyFunList::getHead() {
+      if (data==NULL) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Attempt to get head of empty funlist.");
+      }
+      return getElm()->getHead();
+  }
+
+  PyFunList* PyFunList::getTail() {
+      if (data == NULL) {
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Attempt to get tail of empty funlist.");
+      }
+      return new PyFunList(getElm()->getTail());
+  }
+
+  PyObject* PyFunList::head(vector<PyObject*>* args) {
+      ostringstream msg;
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      return getHead();
+  }
+
+  PyObject* PyFunList::tail(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      return getTail();
+  }
+
+  PyObject* PyFunList::concat(vector<PyObject*>* args) {
+      ostringstream msg;
+
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      ostringstream s;
+
+      PyFunListElm* tmp = data;
+
+      while (data != NULL) {
+	  s << data->getHead()->toString();
+	  data = data->getTail();
+      }
+
+      return new PyStr(s.str());
+  }
+#+END_SRC
