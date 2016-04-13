@@ -1,0 +1,56 @@
+#+TITLE: Understanding CoCo VM: ~PyFunListIterator~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunListIterator.h
+  #ifndef PYFUNLISTITERATOR_H
+  #define PYFUNLISTITERATOR_H
+
+  #include "PyObject.h"
+  #include "PyType.h"
+  #include "PyFunList.h"
+  #include <string>
+
+  using namespace std;
+
+  class PyFunListIterator: public PyObject {
+  public:
+      PyFunListIterator(PyFunList* lst);
+      virtual ~PyFunListIterator();
+      PyType* getType();
+      string toString();
+
+  protected:
+      PyFunLisElm* elm;
+      virtual PyObject* __iter__(vector<PyObject*>* args);
+      virtual PyObject* __next__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+* Constructor
+
+Iterator has two magic methods, ~__iter__~ and ~__next__~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunListIterator.cpp
+  #include "PyFunListIterator.h"
+  #include "PyFunList.h"
+  #include "PyException.h"
+  #include <sstream>
+  #include <string>
+  using namespace std;
+
+  PyFunListIterator::PyFunListIterator(PyFunList* lst): PyObject() {
+      this->elm = lst->getElm();
+
+      dict["__iter__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunListIterator::__iter__);
+      dict["__next__"] =
+	  (PyObject* (PyObject::*)(vector<PyObject*>*)) (&PyFunListIterator::__next__);
+  }
+
+  PyFunListIterator::~PyFunListIterator() {
+  }
+#+END_SRC
