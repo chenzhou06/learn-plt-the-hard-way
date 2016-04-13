@@ -5,10 +5,10 @@
 
 ~PyFunList~ objects are lists where the head and the tail are joined together to
 form a list in the same manner that most functional languages implement
-lists. They are different from the previously defined ~PyList~ objects by
-dividing a list to head and tail, thus gaining an efficiency of O(1) head and
-tail operations. However, this kind of list loses constant index querying. The
-elements in a ~PyFunList~ are separately defined.
+lists. They are different from the previously defined ~PyList~ objects in the
+aspect that by dividing a list into head and tail, thus we gain an efficiency of
+O(1) head and tail operations. However, this kind of list loses constant index
+querying. The elements in a ~PyFunList~ are separately defined.
 
 #+BEGIN_SRC c++ :tangle ./export/PyFunList.h
   #ifndef PYFUNLIST_H
@@ -104,7 +104,7 @@ one, otherwise it should be the length of its tails plus one.
 
 *** String and access
 
-Converting a ~PyFunList~ to a string will recursively convert its tails to strings.
+Converting a ~PyFunListElm~ to a string will recursively convert its tails to strings.
 
 #+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
   string PyFunListElm::toString() {
@@ -118,10 +118,10 @@ Converting a ~PyFunList~ to a string will recursively convert its tails to strin
   }
 #+END_SRC
 
-The head of a ~PyFunListElm~ is a ~PyObject~, but the tail is not any other type
-of ~PyObject~, it just another ~PyFunListElm~. So that ~tail~ obtained from a
-~PyFunListElm~ has its own ~tail~ again. This chain can continue until the final
-tail is ~NULL~.
+The head of a ~PyFunListElm~ is a ~PyObject~ of any kinds, but the tail is not
+any other type of ~PyObject~, it just another ~PyFunListElm~. So the ~tail~
+obtained from a ~PyFunListElm~ has its own ~tail~ again. This chain can continue
+until the final tail is ~NULL~.
 
 #+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
   PyObject* PyFunListElm::getHead() {
@@ -144,10 +144,10 @@ tail is ~NULL~.
 There are four ways to construct a ~PyFunList~.
 
 - First, construct from a vector of ~PyObject~. This method builds a
-  ~PyFunListElm~ from those ~PyObject~, and takes it as the data field.
+  ~PyFunListElm~ from those ~PyObject~ elements, and takes it as the data field.
 - Second, construct an empty ~PyFunList~ whose data field just is a ~NULL~ pointer.
 - Third, concatenate one object to another ~PyFunList~.
-- Forth, construct from a ~PyFunListElm~ which will become the ~PyFunList~'s data.
+- Fourth, construct from a ~PyFunListElm~ which will become the ~PyFunList~'s data.
 
 
 #+BEGIN_SRC c++ :tangle ./export/PyFunList.cpp
