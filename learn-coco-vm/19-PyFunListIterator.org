@@ -54,3 +54,48 @@ Iterator has two magic methods, ~__iter__~ and ~__next__~.
   PyFunListIterator::~PyFunListIterator() {
   }
 #+END_SRC
+
+* Type and string
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunListIterator.cpp
+  PyType* PyFunListIterator::getType() {
+      return PyTypes[PyFunListIteratorType];
+  }
+
+  string PyFunListIterator::toString() {
+      ostringstream s;
+      s << "<funlist_iterator object at " << this << << ">";
+      return s.str();
+  }
+#+END_SRC
+
+* Iter and next
+
+Every time the next method is called, the head is returned and the ~elm~ filed
+is changed to the tail.
+
+#+BEGIN_SRC c++ :tangle ./export/PyFunListIterator.cpp
+  PyObject* PyFunListIterator::__iter__(vector<PyObject*>* args) {
+      ostringstream msg;
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got " << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      return this;
+  }
+
+  PyObject* PyFunListIterator::__next__(vector<PyObject*>* args) {
+      ostringstream msg;
+      if (args->size() != 0) {
+	  msg << "TypeError: expected 0 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+      if (elm == NULL) {
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, "Stopping Iteration");
+      }
+      PyObject* item = elm->getHead();
+      elm = elm->getTail();
+      return item;
+  }
+#+END_SRC
