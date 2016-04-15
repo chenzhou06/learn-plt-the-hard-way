@@ -71,7 +71,7 @@ Iterator has two magic methods, ~__iter__~ and ~__next__~.
 
 * Iter and next
 
-Every time the next method is called, the head is returned and the ~elm~ filed
+Every time the next method is called, the head is returned and the ~elm~ field
 is changed to the tail.
 
 #+BEGIN_SRC c++ :tangle ./export/PyFunListIterator.cpp
