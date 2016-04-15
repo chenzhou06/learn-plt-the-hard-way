@@ -1,0 +1,156 @@
+#+TITLE: Understanding CoCo VM: ~PyStack~
+#+TITLE: Chen Zhou
+
+* Header file
+
+~PyStack~ is used for both the operand stack (in PyFrame) and the block stack.
+
+** ~PyStackElement~
+
+Every element in a ~PyStack~ is a ~PyStackElement~ object which has an object
+data and a pointer to the next element in the same ~PyStack~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyStack.h
+  #ifndef PYSTACK_H
+  #define PYSTACK_H
+
+  #include "PyException.h"
+  #include <sstream>
+
+  template<class T>
+  class __PyStackElement {
+  public:
+      __PyStackElement(T element);
+      virtual ~__PyStackElement();
+
+      T object;
+      __PyStackElement<T>* next;
+  };
+#+END_SRC
+
+** Constructors
+
+~PyStack~ has methods ~pop~, ~top~, and ~push~. The operation ~pop~ returns the
+top element in a stack and deletes it from the stack. The operation ~top~
+returns the top element but not deletes it from the stack. The operation ~push~
+adds an element on the top of a stack. The private field ~tos~ is a pointer to
+the stack's top element. The field ~count~ records the number of elements in a
+stack.
+
+#+BEGIN_SRC c++ :tangle ./export/PyStack.h
+  template<class T>
+  class PyStack {
+  public:
+      PyStack();
+      virtual ~PyStack();
+      T pop();
+      void push(T object);
+      T top();
+      bool isEmpty();
+      string toString();
+      int getCount();
+
+  private:
+      __PyStackElement<T>* tos;
+      int count;
+  };
+
+  template <class T>
+  PyStack<T>::PyStack() {
+      tos = NULL;
+  }
+
+  template <class T>
+  PyStack<T>::~PyStack() {
+      if (tos != NULL) {
+	  try {
+	      delete tos;
+	  } catch (...) {}
+      }
+  }
+#+END_SRC
+
+** String and count
+
+To make a string representation of a ~PyStack~ the ~toString~ method iterates
+its elements and concatenates their string representations.
+
+#+BEGIN_SRC c++ :tangle ./export/PyStack.h
+  template <class T>
+  string PyStack<T>::toString() {
+      stringstream out;
+      out << "top" << endl;
+      __PyStackElement<T>* cursor;
+      cursor = tos;
+      while (cursor != NULL) {
+	  out << *(cursor->object) << endl;
+	  cursor = cursor->next;
+      }
+      return out.str();
+  }
+
+  template <class T>
+  int PyStack<T>::getCount() {
+      return this->count;
+  }
+#+END_SRC
+
+
+
+#+BEGIN_SRC c++ :tangle ./export/PyStack.h
+  template <class T>
+  T PyStack<T>::pop() {
+      if (tos != NULL) {
+	  __PyStackElement<T>* elem = tos;
+	  T val = elem->object;
+	  tos = tos->next;
+	  elem->next = NULL;      // Delete elem without deleting the rest of the
+				  // stack
+	  delete elem;
+	  count--;
+	  return val;
+      }
+      throw new PyException(PYEMPTYSTACKEXCEPTION,
+			    "Attempt to pop an empty stack");
+  }
+
+  template <class T>
+  void PyStack<T>::push(T object) {
+      __PyStackElement<T>* elem = new __PyStackElement<T>(object);
+      elem->next = tos;
+      tos = elem;
+      count++;
+  }
+
+  template <class T>
+  T PyStack<T>::top() {
+      if (tos != NULL) {
+	  T val = tos->object;
+	  return val;
+      }
+      throw new PyException(PYEMPTYSTACKEXCEPTION,
+			    "Attempt to get top of empty stack.");
+  }
+
+  template <class T>
+  bool PyStack<T>::isEmpty() {
+      return (tos == NULL);
+  }
+
+  template <class T>
+  __PyStackElement<T>::__PyStackElement(T obj) {
+      object = obj;
+      next = NULL;
+  }
+
+  template <class T>
+  __PyStackElement<T>::~__PyStackElement() {
+      if (next != NULL) {
+	  try {
+	      delete next;
+	  } catch (...) {}
+      }
+  }
+
+  #endif
+#+END_SRC
