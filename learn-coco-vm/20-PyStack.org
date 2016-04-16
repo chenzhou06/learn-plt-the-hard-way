@@ -95,7 +95,18 @@ its elements and concatenates their string representations.
   }
 #+END_SRC
 
+The ~pop~ method will first check whether the stack is empty or not. If it is
+empty, an exception will be thrown. Otherwise, the element at the top is
+returned, and the ~tos~ pointer is directed to the next element in the
+stack. Before we delete the returned element from the stack, we must assign its
+~next~ pointer to ~NULL~ in case the whole element chain of the stack is
+deleted.
 
+The ~push~ method rearranges the ~tos~ pointer to a new element and makes its
+~next~ pointer directing to the original top element.
+
+The ~top~ method does the same thing as ~pop~ does, except it does not delete the
+top element.
 
 #+BEGIN_SRC c++ :tangle ./export/PyStack.h
   template <class T>
@@ -131,12 +142,18 @@ its elements and concatenates their string representations.
       throw new PyException(PYEMPTYSTACKEXCEPTION,
 			    "Attempt to get top of empty stack.");
   }
-
   template <class T>
   bool PyStack<T>::isEmpty() {
       return (tos == NULL);
   }
+#+END_SRC
 
+The element in ~PyStack~ is another class ~__PyStackElement~ which has an object
+field and a next pointer. When deleting a ~__PyStackElement~ object the
+deconstructor will try to delete objects all the way down through the ~next~
+pointers.
+
+#+BEGIN_SRC c++ :tangle ./export/PyStack.h
   template <class T>
   __PyStackElement<T>::__PyStackElement(T obj) {
       object = obj;
