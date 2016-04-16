@@ -14,7 +14,7 @@ code.
 * [x] PyStr
 * [x] PyInt
 * [x] PyList
-* [ ] PyFunList
+* [x] PyFunList
 * [x] PyNone
 * [x] PyFloat
 * [x] PyTuple
@@ -24,3 +24,4 @@ code.
   - [x] PyStrIterator
   - [x] PyListIterator
   - [x] PyTupleIterator
+* [x] PyStack
