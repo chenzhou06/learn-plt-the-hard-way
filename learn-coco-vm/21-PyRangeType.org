@@ -1,0 +1,112 @@
+#+TITLE: Understanding CoCo VM: ~PyRangeType~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+~PyRangeType~ can be called on an object so it has a magic method ~__call__~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeType.h
+  #ifndef PYRANGETYPE_H
+  #define PYRANGETYPE_H
+
+  #include "PyType.h"
+  #include <string>
+
+  using namespace std;
+
+  class PyRangeType: public PyType {
+  public:
+      PyRangeType(string typeString, PyTypeId id);
+      virtual ~PyRangeType();
+      bool allowableArgCount(int count);
+
+  protected:
+      virtual PyObject* __call__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+* Constructor and others
+
+The constructor do nothing except creating a ~PyType~ object whose name is
+~typeString~, id is ~id~.
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeType.cpp
+  #include "PyRangeType.h"
+  #include "PyType.h"
+  #include "PyException.h"
+  #include "PyInt.h"
+  #include "PyRange.h"
+
+  PyRange::PyRangeType(string typeString, PyTypeId id): PyType(typeString, id) {
+  }
+
+  PyRange::~PyRangeType() {
+  }
+#+END_SRC
+
+* ~__call__~
+
+The main method of ~PyRangeType~ is ~__call__~. According to the number of
+arguments, the ~__call__~ method behaves differently. If only one argument is
+provided, the returned range object starts from zero by default and stops at the
+position the argument specified. If there are two arguments, the first is where
+the range starts, the second is the stop, the increment is one by default. If
+there are three arguments, the first two are the same as before, the last one is
+the increment.
+
+#+BEGIN_SRC c++ :tangle ./export/PyRangeType.cpp
+  PyObject* PyRangeType::__call__(vector<PyObject*>* args) {
+      int start;
+      int stop;
+      int increment;
+
+      switch (args->size()) {
+      case 1:
+	  if ((*args)[0]->getType()->typeId() != PyIntType) {
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "range arguments must be of int type.");
+	  }
+	  start = 0;
+	  stop = ((PyInt*) ((*args)[0]))->getVal();
+	  increment = 1;
+	  break;
+      case 2:
+	  if ((*args)[0]->getType()->typeId() != PyIntType) {
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "range arguments must be of int type.");
+	  }
+	  if ((*args)[1]->getType()->typeId() != PyIntType) {
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "range arguments must be of int type.");
+	  }
+	  start = ((PyInt*) ((*args)[1]))->getVal();
+	  stop = ((PyInt*) ((*args)[0]))->getVal();
+	  increment = 1;
+	  break;
+      case 3:
+	  if ((*args)[0]->getType()->typeId() != PyIntType) {
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "range arguments must be of int type.");
+	  }
+	  if ((*args)[1]->getType()->typeId() != PyIntType) {
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "range arguments must be of int type.");
+	  }
+	  if ((*args)[2]->getType()->typeId() != PyIntType) {
+	      throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				    "range arguments must be of int type.");
+	  }
+	  start = ((PyInt*) ((*args)[2]))->getVal();
+	  stop = ((PyInt*) ((*args)[1]))->getVal();
+	  increment = ((PyInt*) ((*args)[0]))->getVal();
+	  break;
+      default:
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"Incorrect number of arguments for built-in range function.");
+	  break;
+      }
+      return new PyRange(start, stop, increment);
+  }
+#+END_SRC
