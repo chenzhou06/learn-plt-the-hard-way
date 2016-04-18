@@ -1,0 +1,65 @@
+#+TITLE: Understanding CoCo VM: ~PyExceptionType~
+#+AUTHOR: Chen Zhou
+
+* Header files
+
+#+BEGIN_SRC c++ :tangle ./export/PyExceptionType.h
+  #ifndef PYEXCEPTIONTYPE_H
+  #define PYEXCEPTIONTYPE_H
+
+  #include "PyType.h"
+  #include <string>
+  using namespace std;
+
+  class PyExceptionType: public PyType {
+  public:
+      PyExceptionType(string typeString, PyTypeId id);
+      virtual ~PyExceptionType();
+      bool allowableArgCount(int count);
+
+  protected:
+      PyObject* __call__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+* Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyExceptionType.cpp
+  #include "PyExceptionType.h"
+  #include "PyException.h"
+  #include "PyType.h"
+  #include "PyStr.h"
+  #include "PyInt.h"
+  #include <sstream>
+
+  using namespace std;
+
+  PyExceptionType::PyExceptionType(string typeString, PyTypeId id): PyType(typeString, id) {
+  }
+
+  PyExceptionType::~PyExceptionType() {
+  }
+
+  PyObject* PyExceptionType::__call__(vector<PyObject*>* args) {
+      ostringstream msg;
+      int exctype;
+
+      if (args->size() > 2) {
+	  msg << "TypeError: expected 1 or 2 arguments, got "
+	      << args->size();
+	  throw new PyException(PYWRONGARGCOUNTEXCEPTION, msg.str());
+      }
+
+      if (args->size() == 1)
+	  return new PyException(PYEXCEPTION, (*args)[0]);
+
+      if ((*args)[0]->getType()->typeId() != PyIntType)
+	  throw new PyException(PYILLEGALOPERATIONEXCEPTION,
+				"TypeError: expected int for first argument to Exception.");
+
+      exctype = ((PyInt*) (*args)[0])->getVal();
+      return new PyException(exctype, (*args)[1]);
+  }
+#+END_SRC

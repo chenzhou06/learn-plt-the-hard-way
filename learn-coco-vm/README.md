@@ -9,6 +9,8 @@ code.
 * [x] PyObject
 * [x] PyException
 * [x] PyType
+  - [x] PyRangeType
+  - [ ] PyExceptionType
 * [x] PyCallable
 * [x] PyBool
 * [x] PyStr
@@ -19,7 +21,6 @@ code.
 * [x] PyFloat
 * [x] PyTuple
 * [x] PyRange
-* [ ] PyRangeType
 * [ ] Iterators
   - [x] PyStrIterator
   - [x] PyListIterator
