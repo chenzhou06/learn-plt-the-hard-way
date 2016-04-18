@@ -1,0 +1,82 @@
+#+TITLE: Understanding CoCo VM: ~PyAttr~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+This class defines an Attr object which is used to look up a method or other
+attribute of an object. The Attr object inherits from PyCallable meaning that
+this object once created can be called, thus providing the virtual machine with
+a way of calling methods on objects.
+
+#+BEGIN_SRC c++ :tangle ./export/PyAttr.h
+  #ifndef PYATTR_H
+  #define PYATTR_H
+
+  #include "PyCallable.h"
+  #include <string>
+  using namespace std;
+
+  class PyAttr: public PyCallable {
+  public:
+      PyAttr(PyObject* self, string method);
+      virtual ~PyAttr();
+      bool allowableArgCount(int count);
+
+      PyType* getType();
+      string toString();
+
+  protected:
+      string method;
+      PyObject* self;
+
+      virtual PyObject* __call__(vector<PyObject*>* args);
+  };
+
+  #endif
+#+END_SRC
+
+* Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyAttr.cpp
+  #include "PyAttr.h"
+  #include "PyType.h"
+  #include "PyStr.h"
+  #include <sstream>
+  using namespace std;
+
+  PyAttr::PyAttr(PyObject* self, string method): PyCallable() {
+      this->self = self;
+      this->method = method;
+  }
+
+  PyAttr::~PyAttr() {
+      try {
+	  delete self;
+      } catch (...) {}
+  }
+#+END_SRC
+
+* Type and string
+
+#+BEGIN_SRC c++ :tangle ./export/PyAtrr.cpp
+  PyType* PyAttr::getType() {
+      return PyTypes[PyBuiltInType];
+  }
+
+  string PyAttr::toString() {
+      ostringstream s;
+      s << "<built-in method " << method
+	<< " of " << self->getType()->toString()
+	<< " Object at "
+	<< this << ">";
+      return s.str();
+  }
+#+END_SRC
+
+* ~__call__~
+
+#+BEGIN_SRC c++ :tangle ./export/PyAttr.cpp
+  PyObject* PyAttr::__call__(vector<PyObject*>* args) {
+      return self->callMethod(method, args);
+  }
+#+END_SRC
