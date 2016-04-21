@@ -1,0 +1,53 @@
+#+TITLE: Understanding CoCo VM: ~PyParser~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+The PyParser object parses the input file and produces an abstract syntax tree
+representing the program. The abstract syntax tree is represented as a vector of
+PyCode pointers.
+
+#+BEGIN_SRC c++ :tangle ./export/PyParser.h
+  #ifndef PYPARSER_H
+  #define PYPARSER_H
+  #include "PyScanner.h"
+  #include "PyCode.h"
+  #include "PyObject.h"
+  #include <vector>
+  #include <unordered_map>
+  using namespace std;
+
+  class PyParser {
+  public:
+      PyParser(string filename);
+      PyParser(const pyParser& orig);
+      virtual ~PyParser();
+      vector<PyCode*>* parse();
+  private:
+      PyScanner* in;
+
+      unordered_map<string, int> target;
+      int index;
+
+      vector<PyCode*>* PyAssemblyProg();
+      vector<PyCode*>* FunctionListPart();
+      vector<PyCode*>* FunctionList(vector<PyCode*>* vec);
+
+      PyCode* FunDef();
+      vector<PyObject*>* ConstPart(vector<PyCode*>* nestedFuns);
+      vector<PyObject*>* ValueList(vector<PyObject*>* constants,
+				   vector<PyCode*>* nestedFunctions);
+      vector<PyObject*>* ValueRest(vector<PyObject*>* constants,
+				   vector<PyCode*>* nestedFunctions);
+      PyObject* Value(vector<PyCode*>* nestedFunctions);
+      vector<string>* LocalsPart();
+      vector<string>* FreeVarsPart();
+      vector<string>* CellVarsPart();
+      vector<string>* Idlist(vector<string>* lst);
+      vector<string>* IdRest(vector<string>* lst);
+      vector<string>* GlobalsPart();
+      vector<PyByteCode*>* BodyPart();
+      vector<PyByteCode*>* InstructionList(vector<PyByteCode*>*);
+      PyByteCode* LabeledInstruction();
+  };
+#+END_SRC
