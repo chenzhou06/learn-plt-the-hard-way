@@ -1,0 +1,88 @@
+#+TITLE: Understanding CoCo VM: ~PyScanner~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+#+BEGIN_SRC c++ :tangle ./export/PyScanner.h
+  #ifndef PYSCANNER_H_
+  #define PYSCANNER_H_
+
+  #include <fstream>
+  #include "PyToken.h"
+
+  using namespace std;
+
+  class PyScanner {
+  public:
+      PyScanner(istream* in);
+      virtual ~PyScanner();
+      PyToken* getToken();
+      void putBackToken();
+
+  private:
+      istream* in;
+      PyToken* lastToken;
+      bool needToken;
+      int colCount;
+      int lineCount;
+      bool error;
+  };
+
+  #endif
+#+END_SRC
+
+The scanner is based on ~PyToken~ which has not been viewed yet. A scanner has
+its input stream pipe, and keeps records of the lastToken and maintains its
+state indicating whether or not it needs another token. A scanner also traces the
+column number and the line number for better debugging experience.
+
+* Help functions
+
+#+BEGIN_SRC c++ :tangle ./export/PyScanner.cpp
+  #include "PyScanner.h"
+  #include <iostream>
+  using namespace std;
+
+  const char SINGLE_QUOTE = 39;
+  const int numberOfKeywords = 2;
+
+  const string keywd[numberOfKeywords] = {
+      string("BEGIN"), string("END")
+  };
+
+  int isLetter(char c) {          // return a integer
+      return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' || c == '@');
+  }
+
+  int isDigit(char c) {           // return a integer
+      return (c >= '0' && c <= '9');
+  }
+
+  int isWhiteSpace(char c) {
+      return (c == ' ' || c == '\t' || c == '\n');
+  }
+#+END_SRC
+
+Scanner defined three functions to predicate a character is whether a letter, a
+digit or a white space. These functions return integer instead of bool.
+
+* Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PySanner.cpp
+  PyScanner::PyScanner(istream* in) {
+      this->in = in;
+      this->needToken = true;
+      this->colCount = -1;
+      this->lineCount = 1;
+      this->error = false;
+  }
+
+  PyScanner::~PyScanner() {
+      try {
+	  delete in;
+      } catch (...) {}
+  }
+#+END_SRC
+
+A ~PyScanner~ is initiated with ~needToken~ as true, ~colCount~ as -1,
+~lineCount~ as 1.

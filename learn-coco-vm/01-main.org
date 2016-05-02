@@ -64,7 +64,7 @@ These header files can be organized in three major categories as Table
 | PyStr.h           |                    |             |                   |
 | PyRange.h         |                    |             |                   |
 | PyRangeType.h     |                    |             |                   |
-| PyRangeIterator.h |                    |             |                   |
+| PyRangeIterator.h |                    |             |                   |                    |                    |             |                   |
 
 * Stack
 
