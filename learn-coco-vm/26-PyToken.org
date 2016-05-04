@@ -1,0 +1,94 @@
+#+TITLE: Understanding CoCo VM: ~PyToken~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+PyTokens are labeled with integers, here is the comprehensive code table.
+
+| Token Name         | Code |
+|--------------------+------|
+| PYINDENTIFIERTOKEN |    1 |
+| PYINTEGERTOKEN     |    2 |
+| PYFLOATTOKEN       |    3 |
+| PYSTRINGTOKEN      |    4 |
+| PYKEYWORDTOKEN     |    5 |
+| PYCOLONTOKEN       |    6 |
+| PYCOMMATOKEN       |    7 |
+| PYSLASHTOKEN       |    8 |
+| PYLEFTPARENTOKEN   |    9 |
+| PYRIGHTPARENTOKEN  |   10 |
+| PYEOFTOKEN         |   98 |
+| PYBADTOKEN         |   99 |
+
+#+BEGIN_SRC c++ :tangle ./export/PyToken.h
+  #ifndef PYTOKEN_H_
+  #define PYTOKEN_H_
+
+  #include <string>
+
+  using namespace std;
+
+  class PyToken {
+  public:
+      PyToken(int tokenType, string lex, int line, int col);
+      virtual ~PyToken();
+      string getLex() const;
+      int getType() const;
+      int getCol() const;
+      int getLine() const;
+  private:
+      string lexeme;
+      int tokenType;
+      int line;
+      int column;
+  };
+
+  const int PYIDENTIFIERTOKEN = 1;
+  const int PYINTEGERTOKEN = 2;
+  const int PYFLOATTOKEN = 3;
+  const int PYSTRINGTOKEN = 4;
+  const int PYKEYWORDTOKEN = 5;
+  const int PYCOLONTOKEN = 6;
+  const int PYCOMMATOKEN = 7;
+  const int PYSLASHTOKEN = 8;
+  const int PYLEFTPARENTOKEN = 9;
+  const int PYRIGHTPARENTOKEN = 10;
+  const int PYEOFTOKEN = 98;
+  const int PYBADTOKEN = 99;
+
+  #endif
+#+END_SRC
+
+* Implementation
+
+#+BEGIN_SRC c++ :tangle ./export/PyToken.cpp
+  #include "PyToken.h"
+
+  PyToken::PyToken(int tokenType, string lex, int line, int col) {
+      this->lexme = lex;
+      this->tokenType = tokenType;
+      this->line = line;
+      this->column = col;
+  }
+
+  PyToken::~PyToken() {}
+
+  int PyToken::getType() const {
+      return tokenType;
+  }
+
+  int PyToken::getLex() const {
+      return lexeme;
+  }
+
+  int PyToken::getCol() const {
+      return column;
+  }
+
+  int PyToken::getLine() const {
+      return line;
+  }
+#+END_SRC
+
+The class ~PyToken~ has no extra methods operating on it, it just a bundle of
+data collected from source code file.
