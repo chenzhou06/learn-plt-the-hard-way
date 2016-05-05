@@ -1,0 +1,112 @@
+#+TITLE: Understanding CoCo VM: ~PyCode~
+#+AUTHOR: Chen Zhou
+
+* Header file
+
+Each ~PyCode~ object has a name, a number of arguments, corresponding byte code,
+constants, local variables, free variables, cell variables, globals.
+
+#+BEGIN_SRC c++ :tangle ./export/PyCode.h
+  #ifndef PYCODE_H
+  #define PYCODE_H
+
+  #include "PyByteCode.h"
+  #include "PyObject.h"
+  #include <string>
+  #include <vector>
+  using namespace std;
+
+  class PyCode: public PyObject {
+  public:
+      PyCode(string name, vector<PyCode*>* nestedFunctions,
+	     vector<PyObject*>* consts, vector<string>* locals,
+	     vector<PyObject*>* freevars, vector<string>* cellVars,
+	     vector<PyObject*>* globals, vector<PyByteCode*>* code,
+	     int argcount);
+      virtual ~PyCode();
+
+      string getName() const;
+      vector<string>& getLocals() const;
+      vector<string>& getFreeVars() const;
+      vector<string>& getCellVars() const;
+      vector<string>& getGlobals() const;
+      vector<PyObject*>&  getConsts() const;
+      vector<PyByteCode*>& getInstructions() const;
+      vector<PyCode*>& getNestedFunctions() const;
+      int getArgCount() const;
+      int numLocals() const;
+      string toString();
+      string prettyString(string indent, bool linenumbers) const;
+      PyType* getType();
+
+      PyObject* __str__(vector<PyObject*>* args);
+      PyObject* __type__(vector<PyObject*>* args);
+
+  private:
+      string name;
+      vector<PyCode*>* nestedFunctions;
+      vector<string>* locals;
+      vector<string>* freevars;
+      vector<string>* cellvars;
+      vector<string>* globals;
+      vector<PyObject*>* consts;
+      vector<PyByteCode*>* instructions;
+      int argcount;
+  };
+
+  #endif
+#+END_SRC
+
+* Constructor
+
+#+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
+  #include "PyCode.h"
+  #include "PyType.h"
+  #include "PyStr.h"
+  #include <sstream>
+  using namespace std;
+
+  PyCode::PyCode(string name,
+		 vector<PyCode*>* nestedFuns,
+		 vector<PyObject*>* consts,
+		 vector<string>* locals,
+		 vector<string>* freevars,
+		 vector<string>* cellvars,
+		 vector<string>* globals,
+		 vector<PyByteCode*>* code,
+		 int argcount): PyObject() {
+      this->name = name;
+      this->locals = locals;
+      this->freevars = freevars;
+      this->cellvars = cellvars;
+      this->globals = globals;
+      this->consts = consts;
+      this->instructions = code;
+      this->argcount = argcount;
+      this->nestedFunctions = nestedFuns;
+  }
+
+  PyCode::~PyCode() {
+      try {
+	  delete nestedFunctions;
+      } catch (...) {}
+      try {
+	  delete instructions;
+      } catch (...) {}
+      try {
+	  delete consts;
+      } catch (...) {}
+      try {
+	  delete globals;
+      } catch (...) {}
+      try {
+	  delete cellvars;
+      } catch (...) {}
+      try {
+	  delete freevars;
+      } catch (...) {}
+      try {
+	  delete locals;
+      } catch (...) {}
+  }
+#+END_SRC
