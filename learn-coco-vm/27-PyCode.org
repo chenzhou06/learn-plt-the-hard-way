@@ -110,3 +110,156 @@ constants, local variables, free variables, cell variables, globals.
       } catch (...) {}
   }
 #+END_SRC
+
+* Accessor
+
+#+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
+  string PyCode::getName() const {
+      return this->name;
+  }
+
+  vector<PyCode*>& PyCode::getNestedFunctions() const {
+      return *nestedFunctions;
+  }
+
+  vector<PyCode*>& PyCode::getLocals() const {
+      return *(this->locals);
+  }
+
+  vector<string>& PyCode::getFreeVars() const {
+      return *(this->freevars);
+  }
+
+  vector<string>& PyCode::getGlobals() const {
+      return *(this->globals);
+  }
+
+  vector<PyObject*>& PyCode::getConsts() const {
+      return *(this->consts);
+  }
+
+  vector<PyByteCode*>& PyCode::getInstructions() const {
+      return *(this->instructions);
+  }
+
+#+END_SRC
+
+|------------------+--------------------+----------------------|
+| Field            | Method             | Type                 |
+|------------------+--------------------+----------------------|
+| name             | getName            | string               |
+| local variables  | getLocals          | vector<string>&      |
+| free variables   | getFreeVars        | vector<string>&      |
+| cell variables   | getCellVars        | vector<string>&      |
+| global variables | getGlobals         | vector<string>&      |
+| constant objects | getConsts          | vector<PyObject*>&   |
+| Instructions     | getInstructions    | vector<PyByteCode*>& |
+| nested functions | getNestedFunctions | vector<PyCode*>&     |
+|------------------+--------------------+----------------------|
+
+* Helper Functions
+
+#+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
+  int PyCode::getArgCount() const {
+      return this->argcount;
+  }
+
+  int PyCode::numLocals() const {
+      return this->locals->size();
+  }
+
+  PyType* PyCode::getType() {
+      return PyTypes[PyCodeType];
+  }
+#+END_SRC
+
+
+* Pretty Print
+#+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
+  string vectorValsToString(string name, vector<PyObject*>* lst) {
+      string result = "";
+      if (lst->size() > 0) {
+	  result += name;
+	  int i;
+	  for (i = 0; i < lst->size(); i++) {
+	      PyObject* obj = (*lst)[i];
+	      if (obj->getType()->typeId() == PyStrType)
+		  result += "'" + obj->toString() + "'";
+	      else
+		  result += (*lst)[i]->toString();
+
+	      if (i < lst->size() - 1)
+		  result += ", ";
+	  }
+	  result += "\n";
+      }
+      return result;
+  }
+
+  string vectorToString(string name, vector<string>* lst) {
+      string result = "";
+
+      if (lst->size() > 0) {
+	  result += name;
+	  int i;
+	  for (i = 0; i < lst->size(); i++) {
+	      result += (*lst)[i];
+	      if (i < lst->size() - 1)
+		  result += ", ";
+	  }
+	  result += "\n";
+      }
+      return result;
+  }
+
+  string PyCode::prettyString(string indent, bool linenumbers) const {
+      stringstream ss;
+
+      ss << indent << "Function: " << name << "/" << argcount << "\n";
+
+      if (!linenumbers)
+	  for (int i = 0; i < nestedFunctions->size(); i++) {
+	      ss << (*nestedFunctions)[i]->prettyString(indent + "    ",
+							linenumbers);
+	  }
+
+      ss << vectorValsToString(indent + "Constants: ", consts);
+      ss << vectorToString(indent + "Locals: ", locals);
+      ss << vectorToString(indent + "FreeVars: ", freevars);
+      ss << vectorToString(indent + "CellVars: ", cellvars);
+      ss << vectorToString(indent + "Globals: ", globals);
+      ss << indent << "BEGIN\n";
+
+      int i;
+      for (i = 0; i < instructions->size(); i++) {
+	  if (linenumbers) {
+	      ss << i << ": ";
+	      if (i < 10)
+		  ss << " ";
+	      if (i < 100)
+		  ss << " ";
+	  }
+	  ss << indent << (*instructions)[i]->toString() << "\n";
+      }
+
+      ss << indent + "END\n";
+
+      return ss.str();
+  }
+
+  string PyCode::toString() {
+      return "code(" + this->name + ")";
+  }
+#+END_SRC
+
+* Magic methods
+
+#+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
+  PyObject* PyCode::__type__(vector<PyObject*>* args) {
+      return PyTypes[PyCodeType];
+  }
+
+  PyObject* PyCode::__str__(vector<PyObject*>* args) {
+      return new PyStr(toString());
+  }
+#+END_SRC
