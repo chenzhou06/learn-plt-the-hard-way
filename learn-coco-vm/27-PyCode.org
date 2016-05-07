@@ -113,6 +113,19 @@ constants, local variables, free variables, cell variables, globals.
 
 * Accessor
 
+|------------------+--------------------+----------------------|
+| Field            | Method             | Type                 |
+|------------------+--------------------+----------------------|
+| name             | getName            | string               |
+| local variables  | getLocals          | vector<string>&      |
+| free variables   | getFreeVars        | vector<string>&      |
+| cell variables   | getCellVars        | vector<string>&      |
+| global variables | getGlobals         | vector<string>&      |
+| constant objects | getConsts          | vector<PyObject*>&   |
+| Instructions     | getInstructions    | vector<PyByteCode*>& |
+| nested functions | getNestedFunctions | vector<PyCode*>&     |
+|------------------+--------------------+----------------------|
+
 #+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
   string PyCode::getName() const {
       return this->name;
@@ -144,20 +157,11 @@ constants, local variables, free variables, cell variables, globals.
 
 #+END_SRC
 
-|------------------+--------------------+----------------------|
-| Field            | Method             | Type                 |
-|------------------+--------------------+----------------------|
-| name             | getName            | string               |
-| local variables  | getLocals          | vector<string>&      |
-| free variables   | getFreeVars        | vector<string>&      |
-| cell variables   | getCellVars        | vector<string>&      |
-| global variables | getGlobals         | vector<string>&      |
-| constant objects | getConsts          | vector<PyObject*>&   |
-| Instructions     | getInstructions    | vector<PyByteCode*>& |
-| nested functions | getNestedFunctions | vector<PyCode*>&     |
-|------------------+--------------------+----------------------|
 
 * Helper Functions
+
+Three functions for retrieving the number of arguments, size of local variables,
+type of the ~PyCode~ object.
 
 #+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
   int PyCode::getArgCount() const {
@@ -175,6 +179,13 @@ constants, local variables, free variables, cell variables, globals.
 
 
 * Pretty Print
+
+To make a string representation of a ~PyCode~ object, the author first defined
+two functions to transform a vector of ~PyObject~ or a vector of ~string~ to a
+readable string. ~vectorValsToString~ is responsible for constructing a string
+representation out of a vector of ~PyObject~. ~vectorToString~ is to form a
+string out of a series of string.
+
 #+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
   string vectorValsToString(string name, vector<PyObject*>* lst) {
       string result = "";
@@ -251,6 +262,12 @@ constants, local variables, free variables, cell variables, globals.
       return "code(" + this->name + ")";
   }
 #+END_SRC
+
+~PrettyString~ can organize ~PyCode~'s internal information in a readable
+way. Different layers of code is placed in different blocks with different
+indentation. A ~PyCode~ prettified string first shows its name and the number of
+its arguments. The environment in which code is lived is transformed with these
+help functions defined above.
 
 * Magic methods
 
