@@ -61,6 +61,9 @@ PyTokens are labeled with integers, here is the comprehensive code table.
 
 * Implementation
 
+A ~PyToken~ object contains lex which is a string, type of this token, column
+number and line number.
+
 #+BEGIN_SRC c++ :tangle ./export/PyToken.cpp
   #include "PyToken.h"
 
