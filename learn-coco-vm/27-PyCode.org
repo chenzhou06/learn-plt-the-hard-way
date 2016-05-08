@@ -271,6 +271,8 @@ help functions defined above.
 
 * Magic methods
 
+Two magic functions for providing ~__type__~ and ~__str__~ information.
+
 #+BEGIN_SRC c++ :tangle ./export/PyCode.cpp
   PyObject* PyCode::__type__(vector<PyObject*>* args) {
       return PyTypes[PyCodeType];
