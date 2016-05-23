@@ -20,6 +20,9 @@ class SCMObject:
         self.type = type
         self.data = _ObjectFixnum(data)
 
+    def __eq__(self, other):
+        return self.data.value == other.data.value
+
     def __repr__(self):
         return "<Type: {}, Value: {}>".format(self.type, self.data)
 
@@ -76,8 +79,18 @@ def SCMRead(fhandle):
     value = int("".join(digits))
     return make_fixnum(value)
 
-import io
-s = " 123104 "
-print(s)
-f = io.StringIO(s)
-print(SCMRead(f))
+
+import unittest
+
+class TestFixnumObject(unittest.TestCase):
+    def test_SCMRead(self):
+        import io
+        s = "123455"
+        s0 = "      123414"
+        f = io.StringIO(s)
+        f0 = io.StringIO(s0)
+        self.assertEqual(SCMRead(f), make_fixnum(int(s)))
+        self.assertEqual(SCMRead(f0), make_fixnum(int(s0)))
+
+if __name__ == "__main__":
+    unittest.main()
