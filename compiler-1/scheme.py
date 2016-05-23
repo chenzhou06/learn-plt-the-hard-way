@@ -1,4 +1,5 @@
 from enum import Enum
+import io
 
 # Model
 
@@ -39,12 +40,11 @@ def is_delimiter(c):
     return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";";
 
 # This may not necessary.
-def peek(infile):
-    char = infile.peek(1)
-    return char
+def peek(iostream):
+    return
 
 def SCMRead(fhandle):
-    "Return an object from infile."
+    "Return an object from a file handle."
     sign = 1
     num = 0
     in_comment = False
@@ -63,7 +63,7 @@ def SCMRead(fhandle):
             in_comment = False
             continue
 
-        if char.isdigit() or (char == "-" and char.peek(1).isdigit()):
+        if char.isdigit() or (char == "-" and peek(fhandle).isdigit()):
             if char == "-":
                 sign = -1
             elif char.isdigit():
@@ -74,23 +74,31 @@ def SCMRead(fhandle):
             else:
                 raise Exception("Number not followed by delimiter")
         else:
-            raise Exception("bad input. Unexpected '{}'".format(char))
-
+            raise Exception("Bad input. Unexpected '{}'".format(char))
     value = int("".join(digits))
     return make_fixnum(value)
 
+# Evaluate
+# Placeholder
+def SCMEval(exp):
+    return exp
 
-import unittest
+# Print
+def SCMWrite(obj):
+    if (obj.type == ObjectType.FIXNUM):
+        print(obj.data.value)
+    else:
+        raise Exception("Cannot write unkown type")
 
-class TestFixnumObject(unittest.TestCase):
-    def test_SCMRead(self):
-        import io
-        s = "123455"
-        s0 = "      123414"
-        f = io.StringIO(s)
-        f0 = io.StringIO(s0)
-        self.assertEqual(SCMRead(f), make_fixnum(int(s)))
-        self.assertEqual(SCMRead(f0), make_fixnum(int(s0)))
+# REPL
+def main():
+    print("Welcome to Bootstrap Scheme.", "Use ctrl-c to exit.")
+    import sys, io
+    while True:
+        s = input("> ")
+        s = io.StringIO(s)
+        SCMWrite(SCMEval(SCMRead(s)))
+
 
 if __name__ == "__main__":
-    unittest.main()
+    main()
