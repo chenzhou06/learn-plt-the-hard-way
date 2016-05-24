@@ -5,6 +5,7 @@ import io
 class ObjectType(Enum):
     FIXNUM = 1
     BOOLEAN = 2
+    CHARACTER = 3
 
 class _ObjectValue:
     def __init__(self, value):
@@ -43,6 +44,12 @@ def make_fixnum(value):
 def is_fixnum(obj):
     return obj.type == ObjectType.FIXNUM
 
+def make_character(value):
+    return SCMObject(ObjectType.CHARACTER, value)
+
+def is_character(obj):
+    return obj.type == ObjectType.CHARACTER
+
 
 # Read
 def is_delimiter(c):
@@ -60,11 +67,14 @@ def SCMRead(fhandle):
     last_char = ""
     have_return = False
 
+    in_bool_or_char = False
     in_bool = False
+    in_char = False
     in_comment = False
     in_digits, expect_digit = False, False
 
     for char in fhandle.read():
+        # Update iterator buffer
         # Remove white space and comment.
         if char.isspace():
             continue
@@ -77,18 +87,42 @@ def SCMRead(fhandle):
             in_comment = False
             continue
 
-        # Boolean
-        if not in_bool and char == "#":
-            in_bool = True
+        # Boolean or character
+        if not in_bool_or_char and char == "#":
+            in_bool_or_char = True
             continue
-        elif in_bool and char == "t":
-            in_bool = False
+        elif in_bool_or_char and char == "t":
+            in_bool_or_char = False
+            in_char = False
             return SCMTrue
-        elif in_bool and char == "f":
-            in_bool = False
+        elif in_bool_or_char and char == "f":
+            in_bool_or_char = False
+            in_char = False
             return SCMFalse
-        elif in_bool:
-            raise Exception("Unknown boolean literal")
+        elif in_bool_or_char and char == "\\":
+            # Read character
+            in_char = True
+            in_bool = False
+            continue
+
+        # Character
+        if in_char and char == "s":
+            pace = "".join([next(fhandle.read()) for _ in range(0,4)])
+            if pace == "pace":
+                in_char = False
+                return make_character(" ")
+            else:
+                raise Exception("Unexpected characters {}".format(pace))
+        elif in_char and char == "n":
+            ewline = "".join([next(fhandle.read()) for _ in range(0,6)])
+            if ewline == "ewline":
+                in_char = False
+                return make_character("\n")
+            else:
+                raise Exception("Unexpected characters {}".format(ewline))
+        elif in_char:
+            in_char = False
+            return make_character(char)
 
         # Digit
         if not in_digits and char.isdigit():
