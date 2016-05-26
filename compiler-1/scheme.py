@@ -64,16 +64,10 @@ def read_digit(fhandle, leading):
             raise Exception("Number not followed by delimiter")
 
 def is_delimiter(c):
-    # EOF not handled.
     return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
 
 def SCMRead(fhandle):
     "Return an object from a file handle."
-    sign = 1
-    num = 0
-    in_comment = False
-    digits = []
-
     char = eat_whitespace(fhandle)
     if char.isdigit():
         value = read_digit(fhandle, char)
