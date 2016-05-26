@@ -67,10 +67,6 @@ def is_delimiter(c):
     # EOF not handled.
     return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
 
-# This may not necessary.
-def peek(iostream):
-    return
-
 def SCMRead(fhandle):
     "Return an object from a file handle."
     sign = 1
