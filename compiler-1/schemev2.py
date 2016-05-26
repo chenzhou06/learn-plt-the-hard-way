@@ -46,69 +46,67 @@ def is_fixnum(obj):
 
 # Read
 def is_delimiter(c):
-    # EOF not handled.
-    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";";
+    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
 
-# This may not necessary.
-def peek(iostream):
-    return
+def eat_whitespace(fhandle):
+    char = None
+    while True:
+        char = fhandle.read(1)
+        if char.isspace():
+            continue
+        elif char == ";":
+            in_comment = True
+            while True:
+                char2 = fhandle.read(1)
+                if char2 == "\n":
+                    break
+            continue
+        else:
+            break
+    return char
+
+def read_digit(fhandle, leading):
+    "Read digits, return corresponding integer."
+    digits = [leading]
+    while True:
+        char = fhandle.read(1)
+        if char.isdigit():
+            digits.append(char)
+            continue
+        elif is_delimiter(char):
+            return int("".join(digits))
+        else:
+            raise Exception("Number not followed by delimiter")
+
+def read_bool(fhandle):
+    "Return a boolean or just the character."
+    char = fhandle.read(1)
+    if char == "t":
+        return SCMTrue
+    elif char == "f":
+        return SCMFalse
+    else:
+        return char
 
 def SCMRead(fhandle):
     "Return an object from a file handle."
-    sign = 1
-    digits = []
     last_char = ""
-    have_return = False
 
-    in_bool = False
-    in_comment = False
-    in_digits, expect_digit = False, False
+    # Remove whitespace and comment
+    char = eat_whitespace(fhandle)
 
-    for char in fhandle.read():
-        # Remove white space and comment.
-        if char.isspace():
-            continue
-        elif not in_comment and char == ";":
-            in_comment = True
-            continue
-        elif in_comment and char != "\n":
-            continue
-        elif in_comment and char == "\n":
-            in_comment = False
-            continue
-
-        # Boolean
-        if not in_bool and char == "#":
-            in_bool = True
-            continue
-        elif in_bool and char == "t":
-            in_bool = False
-            return SCMTrue
-        elif in_bool and char == "f":
-            in_bool = False
-            return SCMFalse
-        elif in_bool:
-            raise Exception("Unknown boolean literal")
-
-        # Digit
-        if not in_digits and char.isdigit():
-            if last_char == "-":
-                sign = -1
-            in_digits = True
-            digits.append(char)
-            continue
-        elif in_digits and char.isdigit():
-            digits.append(char)
-            continue
-        elif in_digits and not char.isdigit():
-            in_digits = False
-            return make_fixnum(sign*int("".join(digits)))
-
-    if in_digits:
-        in_digits = False
-        return make_fixnum(sign*int("".join(digits)))
+    # Boolean
+    if char == "#":
+        return read_bool(fhandle)
+    # Digit
+    elif char.isdigit():
+        value = read_digit(fhandle, char)
+        return make_fixnum(value)
+    elif char == "-":
+        return make_fixnum(fhandle, fhandle.read(1))
     else:
-        raise Exception("Read illegal state")
+        raise Exception("Unexpected character '{}'".format(char))
+
 
 # Evaluate
 # Placeholder
