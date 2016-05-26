@@ -102,7 +102,12 @@ def SCMRead(fhandle):
         value = read_digit(fhandle, char)
         return make_fixnum(value)
     elif char == "-":
-        return make_fixnum(fhandle, fhandle.read(1))
+        char2 = fhandle.read(1)
+        if char2.isdigit():
+            value = read_digit(fhandle, char2)
+            return make_fixnum(-1*value)
+        else:
+            raise Exception("Unexpected character '{}'".format(char2))
     else:
         raise Exception("Unexpected character '{}'".format(char))
 
