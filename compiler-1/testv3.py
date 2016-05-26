@@ -12,6 +12,8 @@ class TestFixnumObject(unittest.TestCase):
         f0 = io.StringIO(s0)
         self.assertEqual(SCMRead(f), make_fixnum(int(s)))
         self.assertEqual(SCMRead(f0), make_fixnum(int(s0)))
+        self.assertEqual(SCMRead(io.StringIO("-1234")),
+                         make_fixnum(int("-1234")))
 
 class TestBoolean(unittest.TestCase):
     def test_SCMBool(self):

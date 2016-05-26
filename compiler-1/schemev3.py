@@ -53,96 +53,119 @@ def is_character(obj):
 
 # Read
 def is_delimiter(c):
-    # EOF not handled.
-    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";";
+    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
 
 # This may not necessary.
 def peek(iostream):
     return
 
-def SCMRead(fhandle):
-    "Return an object from a file handle."
-    sign = 1
-    digits = []
-    last_char = ""
-    have_return = False
-
-    in_bool_or_char = False
-    in_bool = False
-    in_char = False
-    in_comment = False
-    in_digits, expect_digit = False, False
-
-    for char in fhandle.read():
-        # Update iterator buffer
-        # Remove white space and comment.
+def eat_whitespace(fhandle):
+    char = None
+    while True:
+        char = fhandle.read(1)
         if char.isspace():
             continue
-        elif not in_comment and char == ";":
+        elif char == ";":
             in_comment = True
+            while True:
+                char2 = fhandle.read(1)
+                if char2 == "\n":
+                    break
             continue
-        elif in_comment and char != "\n":
-            continue
-        elif in_comment and char == "\n":
-            in_comment = False
-            continue
+        else:
+            break
+    return char
 
-        # Boolean or character
-        if not in_bool_or_char and char == "#":
-            in_bool_or_char = True
-            continue
-        elif in_bool_or_char and char == "t":
-            in_bool_or_char = False
-            in_char = False
-            return SCMTrue
-        elif in_bool_or_char and char == "f":
-            in_bool_or_char = False
-            in_char = False
-            return SCMFalse
-        elif in_bool_or_char and char == "\\":
-            # Read character
-            in_char = True
-            in_bool = False
-            continue
-
-        # Character
-        if in_char and char == "s":
-            pace = "".join([next(fhandle.read()) for _ in range(0,4)])
-            if pace == "pace":
-                in_char = False
-                return make_character(" ")
-            else:
-                raise Exception("Unexpected characters {}".format(pace))
-        elif in_char and char == "n":
-            ewline = "".join([next(fhandle.read()) for _ in range(0,6)])
-            if ewline == "ewline":
-                in_char = False
-                return make_character("\n")
-            else:
-                raise Exception("Unexpected characters {}".format(ewline))
-        elif in_char:
-            in_char = False
-            return make_character(char)
-
-        # Digit
-        if not in_digits and char.isdigit():
-            if last_char == "-":
-                sign = -1
-            in_digits = True
+def read_digit(fhandle, leading):
+    "Read digits, return corresponding integer."
+    digits = [leading]
+    while True:
+        char = fhandle.read(1)
+        if char.isdigit():
             digits.append(char)
             continue
-        elif in_digits and char.isdigit():
-            digits.append(char)
-            continue
-        elif in_digits and not char.isdigit():
-            in_digits = False
-            return make_fixnum(sign*int("".join(digits)))
+        elif is_delimiter(char):
+            return int("".join(digits))
+        else:
+            raise Exception("Number not followed by delimiter")
 
-    if in_digits:
-        in_digits = False
-        return make_fixnum(sign*int("".join(digits)))
+def read_bool(fhandle):
+    "Return a boolean or just the character."
+    char = fhandle.read(1)
+    if char == "t":
+        return SCMTrue
+    elif char == "f":
+        return SCMFalse
     else:
-        raise Exception("Read illegal state")
+        return char
+
+def eat_expected_string(fhandle, expect):
+    e = [fhandle.read(1) for _ in expect]
+    real = "".join(e)
+    if real == expect:
+        return True
+    else:
+        raise Exception("Unexpected characters '{}'".format(real))
+
+def peek_expected_delimiter(fhandle):
+    if not is_delimiter(fhandle.read(1)):
+        raise Exception("Character not followed by delimiter")
+    else:
+        pass
+
+def read_character(fhandle, leading):
+    if leading == "\\":
+        char = fhandle.read(1)
+        char2 = None
+        if char == "":
+            raise Exception("Incomplete character literal")
+        elif char == "s":
+            char2 = fhandle.read(1)
+            if char2 == "p":
+                eat_expected_string(fhandle, "ace")
+                peek_expected_delimiter(fhandle)
+                return make_character(" ")
+        elif char == "n":
+            char2 = fhandle.read(1)
+            if char2 == "e":
+                eat_expected_string(fhandle, "wline")
+                peek_expected_delimiter(fhandle)
+                return make_character("\n")
+        elif char2 and is_delimiter(char2):
+            return make_character(char)
+        else:
+            peek_expected_delimiter(fhandle)
+            return make_character(char)
+    else:
+        raise Exception("Unknown boolean or character literal")
+
+
+def SCMRead(fhandle):
+    "Return an object from a file handle."
+    char = eat_whitespace(fhandle)
+
+    if char == "#":
+        candidate = read_bool(fhandle)
+        if isinstance(candidate, str):
+            # Character
+            return read_character(fhandle, candidate)
+        else:
+            # Boolean
+            return candidate
+    # Digit
+    elif char.isdigit():
+        value = read_digit(fhandle, char)
+        return make_fixnum(value)
+    elif char == "-":
+        char2 = fhandle.read(1)
+        if char2.isdigit():
+            value = read_digit(fhandle, char2)
+            return make_fixnum(-1*value)
+        else:
+            raise Exception("Unexpected character '{}'".format(char2))
+    else:
+        raise Exception("Unexpected character '{}'".format(char))
+
 
 # Evaluate
 # Placeholder
