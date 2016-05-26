@@ -55,7 +55,6 @@ def eat_whitespace(fhandle):
         if char.isspace():
             continue
         elif char == ";":
-            in_comment = True
             while True:
                 char2 = fhandle.read(1)
                 if char2 == "\n":

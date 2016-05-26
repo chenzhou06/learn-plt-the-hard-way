@@ -55,10 +55,6 @@ def is_character(obj):
 def is_delimiter(c):
     return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
 
-# This may not necessary.
-def peek(iostream):
-    return
-
 def eat_whitespace(fhandle):
     char = None
     while True:
@@ -66,7 +62,6 @@ def eat_whitespace(fhandle):
         if char.isspace():
             continue
         elif char == ";":
-            in_comment = True
             while True:
                 char2 = fhandle.read(1)
                 if char2 == "\n":
