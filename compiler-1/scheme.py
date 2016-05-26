@@ -34,10 +34,38 @@ def is_fixnum(obj):
     return obj.type == ObjectType.FIXNUM
 
 # Read
+def eat_whitespace(fhandle):
+    char = None
+    while True:
+        char = fhandle.read(1)
+        if char.isspace():
+            continue
+        elif char == ";":
+            in_comment = True
+            while True:
+                char2 = fhandle.read(1)
+                if char2 == "\n":
+                    break
+            continue
+        else:
+            break
+    return char
+
+def read_digit(fhandle, leading):
+    digits = [leading]
+    while True:
+        char = fhandle.read(1)
+        if char.isdigit():
+            digits.append(char)
+            continue
+        elif is_delimiter(char):
+            return int("".join(digits))
+        else:
+            raise Exception("Number not followed by delimiter")
 
 def is_delimiter(c):
     # EOF not handled.
-    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";";
+    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
 
 # This may not necessary.
 def peek(iostream):
@@ -50,33 +78,19 @@ def SCMRead(fhandle):
     in_comment = False
     digits = []
 
-    for char in fhandle.read():
-        # Remove white space and comment.
-        if char.isspace():
-            continue
-        elif not in_comment and char == ";":
-            in_comment = True
-            continue
-        elif in_comment and char != "\n":
-            continue
-        elif in_comment and char == "\n":
-            in_comment = False
-            continue
-
-        if char.isdigit() or (char == "-" and peek(fhandle).isdigit()):
-            if char == "-":
-                sign = -1
-            elif char.isdigit():
-                digits.append(char)
-            elif is_delimiter(char):
-                f.write(char)
-                break
-            else:
-                raise Exception("Number not followed by delimiter")
+    char = eat_whitespace(fhandle)
+    if char.isdigit():
+        value = read_digit(fhandle, char)
+        return make_fixnum(value)
+    elif char == "-":
+        char2 = fhandle.read(1)
+        if char2.isdigit():
+            value = read_digit(fhandle, char2)
+            return make_fixnum(value)
         else:
-            raise Exception("Bad input. Unexpected '{}'".format(char))
-    value = int("".join(digits))
-    return make_fixnum(value)
+            raise Exception("Unexpected character '{}'".format(char2))
+    else:
+        raise Exception("Unexpected character '{}'".format(char))
 
 # Evaluate
 # Placeholder
