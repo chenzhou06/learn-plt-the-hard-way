@@ -23,10 +23,10 @@ class TestBoolean(unittest.TestCase):
         f = "#f"
         t1 = "       #t   "
         f2 = "     #f "
-        self.assertEqual(SCMRead(io.StringIO(t)), SCMTrue)
-        self.assertEqual(SCMRead(io.StringIO(f)), SCMFalse)
-        self.assertEqual(SCMRead(io.StringIO(t1)), SCMTrue)
-        self.assertEqual(SCMRead(io.StringIO(f2)), SCMFalse)
+        self.assertIs(SCMRead(io.StringIO(t)), SCMTrue)
+        self.assertIs(SCMRead(io.StringIO(f)), SCMFalse)
+        self.assertIs(SCMRead(io.StringIO(t1)), SCMTrue)
+        self.assertIs(SCMRead(io.StringIO(f2)), SCMFalse)
 
 
 class TestCharacter(unittest.TestCase):

@@ -37,7 +37,7 @@ SCMFalse = SCMObject(ObjectType.BOOLEAN, False)
 
 
 def is_empty_list(obj):
-    return obj == SCMTheEmptyList
+    return obj is SCMTheEmptyList
 
 
 def is_boolean(obj):
@@ -45,11 +45,11 @@ def is_boolean(obj):
 
 
 def is_false(obj):
-    return obj.data.value == False
+    return obj is SCMFalse
 
 
 def is_true(obj):
-    return obj.data.value == True
+    return obj is SCMTrue
 
 
 def make_fixnum(value):
@@ -78,7 +78,8 @@ def is_string(obj):
 
 # Read
 def is_delimiter(c):
-    return c.isspace() or c == "(" or c == ")" or c == "\"" or c == ";" or c == ""
+    return c.isspace() or c == "(" or c == ")" or \
+        c == "\"" or c == ";" or c == ""
 
 
 def eat_whitespace(fhandle):
@@ -237,6 +238,24 @@ def SCMWrite(obj):
         print(obj.data.value)
     elif obj.type == ObjectType.BOOLEAN:
         print(obj.data.value)
+    elif obj.type == ObjectType.THE_EMPTY_LIST:
+        print("()")
+    elif obj.type == ObjectType.CHARACTER:
+        c = obj.data.value
+        fmt = "#\\{}"
+        if c == "\n":
+            print(fmt.format("newline"))
+        elif c == " ":
+            print(fmt.format("space"))
+        else:
+            print(fmt.format(c))
+    elif obj.type == ObjectType.STRING:
+        s = obj.data.value
+        fmt = "\"{}\""
+        s = s.replace("\n", "\\n")
+        s = s.replace("\\", "\\\\")
+        s = s.replace("\"", "\\\"")
+        print(fmt.format(s))
     else:
         raise Exception("Cannot write unkown type")
 
