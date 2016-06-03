@@ -55,6 +55,10 @@ def is_true(obj):
     return obj is SCMTrue
 
 
+def SCMCons(car, cdr):
+    return SCMObject(ObjectType.PAIR, (car, cdr))
+
+
 def make_symbol(value):
     global SCMSymbolTable
     element = SCMSymbolTable
@@ -67,6 +71,9 @@ def make_symbol(value):
     obj = SCMObject(ObjectType.SYMBOL, value)
     SCMSymbolTable = SCMCons(obj, SCMSymbolTable)
     return obj
+
+
+SCMQuoteSymbol = make_symbol("quote")
 
 
 def is_symbol(obj):
@@ -95,10 +102,6 @@ def make_string(value):
 
 def is_string(obj):
     return obj.type == ObjectType.STRING
-
-
-def SCMCons(car, cdr):
-    return SCMObject(ObjectType.PAIR, (car, cdr))
 
 
 def is_pair(obj):
@@ -146,20 +149,19 @@ def peek(fhandle):
 
 
 def eat_whitespace(fhandle):
-    char = None
-    pos = None
     while True:
         pos = fhandle.tell()
         char = fhandle.read(1)
-        if char.isspace():
+        if char == "":
+            break
+        elif char.isspace():
             continue
         elif char == ";":
             while True:
-                pos = fhandle.tell()
-                char2 = fhandle.read(1)
-                if char2 == "\n":
-                    break
-            continue
+                pos = fhandle.tel()
+                char = fhandle.read(1)
+                if char != "" or char != "\n":
+                    continue
         else:
             break
     return char, pos
@@ -296,14 +298,16 @@ def SCMRead(fhandle):
         value = read_digit(fhandle, char2)
         return make_fixnum(-1*value)
     # Symbol
-    elif is_initial(char) or \
-            (char == "+" or char == "-" and is_delimiter(peek(fhandle))):
+    elif is_initial(char) or ((char == "+" or char == "-") and
+                              is_delimiter(peek(fhandle))):
         while (is_initial(char) or char.isdigit() or
                char == "+" or char == "-"):
             buffer += char
+            pos = fhandle.tell()
             char = fhandle.read(1)
 
         if is_delimiter(char):
+            fhandle.seek(pos)
             return make_symbol(buffer)
         else:
             e = "Symbol not followed by delimiter. Found '{}'.".format(char)
@@ -314,17 +318,48 @@ def SCMRead(fhandle):
     # Empty list
     elif char == "(":
         return read_pair(fhandle)
+    # Quoted expression
+    elif char == "\'":
+        return SCMCons(SCMQuoteSymbol,
+                       SCMCons(SCMRead(fhandle), SCMTheEmptyList))
     else:
         raise Exception("Unexpected character '{}'".format(char))
 
 
 # Evaluate
-# Placeholder
+def is_self_evaluating(exp):
+    return (is_boolean(exp) or
+            is_fixnum(exp) or
+            is_character(exp) or
+            is_string(exp))
+
+
+def is_tagged_list(exp, tag):
+    if is_pair(exp):
+        the_car = SCMCar(exp)
+        return is_symbol(the_car) and the_car == tag
+    else:
+        return False
+
+
+def is_quoted(exp):
+    return is_tagged_list(exp, SCMQuoteSymbol)
+
+
+def text_of_quotation(exp):
+    return SCMCar(SCMCdr(exp))
+
+
 def SCMEval(exp):
-    return exp
+    if is_self_evaluating(exp):
+        return exp
+    elif is_quoted(exp):
+        return text_of_quotation(exp)
+    else:
+        raise Exception("Cannot eval unknown expression type")
 
 
-def write_pair(obj):            # TODO: correct unexpected newline.
+def write_pair(obj):
     car = SCMCar(obj)
     cdr = SCMCdr(obj)
 
