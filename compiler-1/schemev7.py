@@ -36,7 +36,7 @@ class SCMObject:
 SCMTheEmptyList = SCMObject(ObjectType.THE_EMPTY_LIST, None)
 SCMTrue = SCMObject(ObjectType.BOOLEAN, True)
 SCMFalse = SCMObject(ObjectType.BOOLEAN, False)
-SCMSymbolTable = SCMTheEmptyList  # default dict
+SCMSymbolTable = SCMTheEmptyList  # TODO: default dict
 
 
 def is_the_empty_list(obj):
@@ -67,6 +67,7 @@ def make_symbol(value):
     obj = SCMObject(ObjectType.SYMBOL, value)
     SCMSymbolTable = SCMCons(obj, SCMSymbolTable)
     return obj
+
 
 def is_symbol(obj):
     return obj.type == ObjectType.SYMBOL
@@ -334,7 +335,7 @@ def write_pair(obj):            # TODO: correct unexpected newline.
     elif cdr.type == ObjectType.THE_EMPTY_LIST:
         return
     else:
-        print(".", end="")
+        print(" . ", end="")
         SCMWrite(cdr)
         return
 
@@ -342,34 +343,34 @@ def write_pair(obj):            # TODO: correct unexpected newline.
 # Print
 def SCMWrite(obj):
     if obj.type == ObjectType.FIXNUM:
-        print(obj.data.value)
+        print(obj.data.value, end="")
     elif obj.type == ObjectType.BOOLEAN:
-        print(obj.data.value)
+        print(obj.data.value, end="")
     elif obj.type == ObjectType.THE_EMPTY_LIST:
-        print("()")
+        print("()", end="")
     elif obj.type == ObjectType.CHARACTER:
         c = obj.data.value
         fmt = "#\\{}"
         if c == "\n":
-            print(fmt.format("newline"))
+            print(fmt.format("newline"), end="")
         elif c == " ":
-            print(fmt.format("space"))
+            print(fmt.format("space"), end="")
         else:
-            print(fmt.format(c))
+            print(fmt.format(c), end="")
     elif obj.type == ObjectType.STRING:
         s = obj.data.value
         fmt = "\"{}\""
         s = s.replace("\n", "\\n")
         s = s.replace("\\", "\\\\")
         s = s.replace("\"", "\\\"")
-        print(fmt.format(s))
+        print(fmt.format(s), end="")
     elif obj.type == ObjectType.PAIR:
         print("(", end="")
         write_pair(obj)
-        print(")")
+        print(")", end="")
     elif obj.type == ObjectType.SYMBOL:
         s = obj.data.value
-        print(s)
+        print(s, end="")
     else:
         raise Exception("Cannot write unkown type")
 
@@ -382,6 +383,7 @@ def main():
         s = input("> ")
         s = io.StringIO(s)
         SCMWrite(SCMEval(SCMRead(s)))
+        print()
 
 
 if __name__ == "__main__":
