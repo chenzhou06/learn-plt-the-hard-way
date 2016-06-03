@@ -295,8 +295,8 @@ def SCMRead(fhandle):
         value = read_digit(fhandle, char2)
         return make_fixnum(-1*value)
     # Symbol
-    elif (is_initial(char) or char == "+" or char == "-") \
-            and is_delimiter(peek(fhandle)):
+    elif is_initial(char) or \
+            (char == "+" or char == "-" and is_delimiter(peek(fhandle))):
         while (is_initial(char) or char.isdigit() or
                char == "+" or char == "-"):
             buffer += char
@@ -323,6 +323,22 @@ def SCMEval(exp):
     return exp
 
 
+def write_pair(obj):            # TODO: correct unexpected newline.
+    car = SCMCar(obj)
+    cdr = SCMCdr(obj)
+
+    SCMWrite(car)
+    if cdr.type == ObjectType.PAIR:
+        print(" ", end="")
+        write_pair(cdr)
+    elif cdr.type == ObjectType.THE_EMPTY_LIST:
+        return
+    else:
+        print(".", end="")
+        SCMWrite(cdr)
+        return
+
+
 # Print
 def SCMWrite(obj):
     if obj.type == ObjectType.FIXNUM:
@@ -347,6 +363,13 @@ def SCMWrite(obj):
         s = s.replace("\\", "\\\\")
         s = s.replace("\"", "\\\"")
         print(fmt.format(s))
+    elif obj.type == ObjectType.PAIR:
+        print("(", end="")
+        write_pair(obj)
+        print(")")
+    elif obj.type == ObjectType.SYMBOL:
+        s = obj.data.value
+        print(s)
     else:
         raise Exception("Cannot write unkown type")
 

@@ -1,5 +1,6 @@
 from schemev7 import SCMRead, make_fixnum, SCMTrue, SCMFalse, \
-    make_character, make_string, SCMTheEmptyList, SCMCons
+    make_character, make_string, SCMTheEmptyList, SCMCons, \
+    make_symbol
 import unittest
 import io
 
@@ -100,6 +101,22 @@ class TestPair(unittest.TestCase):
                          p3_e)
         self.assertEqual(SCMRead(io.StringIO(p4)),
                          p4_e)
+
+
+class TestSymbol(unittest.TestCase):
+    def test_symbol(self):
+        s1 = "asdf"
+        s1_e = make_symbol(s1)
+        s2 = "+vra"
+        s2_e = make_symbol(s2)
+        s3 = "scheme?"
+        s3_e = make_symbol(s3)
+        s4 = "scheme-p"
+        s4_e = make_symbol(s4)
+        self.assertEqual(SCMRead(io.StringIO(s1)), s1_e)
+        self.assertEqual(SCMRead(io.StringIO(s2)), s2_e)
+        self.assertEqual(SCMRead(io.StringIO(s3)), s3_e)
+        self.assertEqual(SCMRead(io.StringIO(s4)), s4_e)
 
 
 if __name__ == "__main__":
