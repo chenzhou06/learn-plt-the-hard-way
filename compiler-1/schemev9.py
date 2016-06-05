@@ -39,10 +39,6 @@ SCMTrue = SCMObject(ObjectType.BOOLEAN, True)
 SCMFalse = SCMObject(ObjectType.BOOLEAN, False)
 SCMSymbolTable = SCMTheEmptyList  # TODO: default dict
 SCMTheEmptyEnvironment = SCMTheEmptyList
-SCMDefineSymbol = None
-SCMSetSymbol = None
-SCMOkSymbol = None
-SCMTheGlobalEnvironment = None
 
 
 def is_the_empty_list(obj):
@@ -175,7 +171,7 @@ def lookup_variable_value(var, env):
         values = frame_values(frame)
         while not is_the_empty_list(variables):
             if var == SCMCar(variables):
-                return SCMCar(variables)
+                return SCMCar(values)
             else:
                 variables = SCMCdr(variables)
                 values = SCMCdr(values)
