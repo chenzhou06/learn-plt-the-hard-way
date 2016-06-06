@@ -1,10 +1,21 @@
-from schemev12 import SCMRead, make_fixnum, SCMTrue, SCMFalse, \
-    make_character, make_string, SCMTheEmptyList, SCMCons, \
-    make_symbol, is_if, if_predicate, if_alternative, if_consequent, \
-    add_proc, is_null_proc, is_boolean_proc, is_integer_proc, \
-    is_symbol_proc, is_char_proc, is_string_proc, is_pair_proc
+from schemev12 import SCMRead, SCMEval, make_fixnum, SCMTrue, SCMFalse, \
+    make_character, make_string
+from schemev12 import SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons, \
+    make_symbol, make_primitive_proc, define_variable, is_if, \
+    if_predicate, if_alternative, if_consequent, \
+    add_proc
+from schemev12 import is_null_proc, is_boolean_proc, is_integer_proc, \
+    is_symbol_proc, is_char_proc, is_string_proc, is_pair_proc, \
+    is_procedure_proc
+from schemev12 import char_to_integer_proc, integer_to_char_proc, \
+    number_to_string_proc, string_to_number_proc, symbol_to_string_proc, \
+    string_to_symbol_proc
 import unittest
 import io
+
+define_variable(make_symbol("+"),
+                make_primitive_proc(add_proc),
+                SCMTheGlobalEnvironment)
 
 
 class TestFixnumObject(unittest.TestCase):
@@ -140,7 +151,7 @@ class TestIf(unittest.TestCase):
         self.assertIs(if_alternative(self.ifexp2), SCMFalse)
 
 
-class TestProc(unittest.TestCase):
+class TestTypePredicate(unittest.TestCase):
     def setUp(self):
         self.opints = SCMRead(io.StringIO("(1 2)"))
         self.opnull = SCMRead(io.StringIO("(())"))
@@ -151,6 +162,7 @@ class TestProc(unittest.TestCase):
         self.opchar = SCMRead(io.StringIO("(#\\a)"))
         self.opstring = SCMRead(io.StringIO("""("abs")"""))
         self.oppair = SCMRead(io.StringIO("((1 2))"))
+        self.procedure = SCMEval(SCMRead(io.StringIO("(+)")), SCMTheGlobalEnvironment)
 
     def test_add_proc(self):
         self.assertEqual(add_proc(self.opints), make_fixnum(3))
@@ -184,6 +196,40 @@ class TestProc(unittest.TestCase):
     def test_is_pair_proc(self):
         self.assertTrue(is_pair_proc(self.oppair))
         self.assertFalse(is_pair_proc(self.opnull))
+
+    def test_is_procedure_proc(self):
+        # self.assertTrue(is_procedure_proc(self.procedure))
+        # self.assertFalse(is_procedure_proc(self.oppair))
+        pass
+
+
+class TestTypeConversion(unittest.TestCase):
+    def setUp(self):
+        self.char = SCMRead(io.StringIO("(#\\a)"))
+        self.integer = SCMRead(io.StringIO("(97)"))
+        self.number = SCMRead(io.StringIO("(12345)"))
+        self.string = SCMRead(io.StringIO("(\"12345\")"))
+        self.symbol = SCMRead(io.StringIO("(abc)"))
+        self.sybstr = SCMRead(io.StringIO("""("abc")"""))
+
+    def test_char_and_integer(self):
+        self.assertEqual(char_to_integer_proc(self.char),
+                         make_fixnum(97))
+        self.assertEqual(integer_to_char_proc(self.integer),
+                         make_character("a"))
+
+    def test_number_and_proc(self):
+        self.assertEqual(number_to_string_proc(self.number),
+                         make_string("12345"))
+        self.assertEqual(string_to_number_proc(self.string),
+                         make_fixnum(12345))
+
+    def test_symbol_and_string(self):
+        self.assertEqual(symbol_to_string_proc(self.symbol),
+                         make_string("abc"))
+        self.assertEqual(string_to_symbol_proc(self.sybstr),
+                         make_symbol("abc"))
+
 
 
 

@@ -141,6 +141,7 @@ def add_proc(arguments):
     return make_fixnum(result)
 
 
+# Type predicates
 def is_null_proc(arguments):
     return is_the_empty_list(SCMCar(arguments)) is True
 
@@ -169,7 +170,36 @@ def is_pair_proc(arguments):
     return is_pair(SCMCar(arguments)) is True
 
 
-# Inits
+def is_procedure_proc(arguments):        # TODO: Untested
+    return is_primitive_proc(SCMCar(arguments)) is True
+
+
+# Type conversions, TODO: add test
+def char_to_integer_proc(arguments):
+    return make_fixnum(ord(SCMCar(arguments).data.value))
+
+
+def integer_to_char_proc(arguments):
+    return make_character(chr(SCMCar(arguments).data.value))
+
+
+def number_to_string_proc(arguments):
+    return make_string(str(SCMCar(arguments).data.value))
+
+
+def string_to_number_proc(arguments):
+    return make_fixnum(int(SCMCar(arguments).data.value))
+
+
+def symbol_to_string_proc(arguments):
+    return make_string(SCMCar(arguments).data.value)
+
+
+def string_to_symbol_proc(arguments):
+    return make_symbol(SCMCar(arguments).data.value)
+
+
+# Singleton
 SCMQuoteSymbol = make_symbol("quote")
 SCMDefineSymbol = make_symbol("define")
 SCMSetSymbol = make_symbol("set!")
@@ -310,11 +340,11 @@ def read_digit(fhandle, leading):
     "Read digits, return corresponding integer."
     digits = [leading]
     while True:
-        c = peek(fhandle)
-        if c.isdigit():
+        char = peek(fhandle)
+        if char.isdigit():
             digits.append(fhandle.read(1))
             continue
-        elif is_delimiter(c):
+        elif is_delimiter(char):
             return int("".join(digits))
         else:
             raise Exception("Number not followed by delimiter")
