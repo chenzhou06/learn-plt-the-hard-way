@@ -1,6 +1,6 @@
 from schemev12 import SCMRead, SCMEval, make_fixnum, SCMTrue, SCMFalse, \
     make_character, make_string
-from schemev12 import SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons, \
+from schemev12 import SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons, SCMOkSymbol, \
     make_symbol, make_primitive_proc, define_variable, is_if, \
     if_predicate, if_alternative, if_consequent
 from schemev12 import is_null_proc, is_boolean_proc, is_integer_proc, \
@@ -11,6 +11,8 @@ from schemev12 import char_to_integer_proc, integer_to_char_proc, \
     string_to_symbol_proc
 from schemev12 import add_proc, sub_proc, mul_proc, quotient_proc, remainder_proc
 from schemev12 import is_number_equal_proc, is_less_then_proc, is_greater_then_proc
+from schemev12 import (cons_proc, car_proc, cdr_proc, set_car_proc,
+                       set_cdr_proc, list_proc)
 import unittest
 import io
 
@@ -273,6 +275,39 @@ class TestComparision(unittest.TestCase):
     def test_greater_then_proc(self):
         self.assertTrue(is_greater_then_proc(self.greaternums))
         self.assertFalse(is_greater_then_proc(self.lessnums))
+
+
+class TestListProc(unittest.TestCase): # TODO: test failed.
+    """Tests for list procedures."""
+
+    def setUp(self):
+        self.abc = SCMRead(io.StringIO("((1) (2))"))
+        self.hij = SCMRead(io.StringIO("((1 2) 3)"))
+        self.lmn = SCMRead(io.StringIO("((1 2) (7 8))"))
+
+    def test_cons_proc(self):
+        self.assertEqual(cons_proc(self.abc),
+                         SCMCons(make_fixnum(1), make_fixnum(2)))
+
+    def test_car_proc(self):
+        self.assertEqual(car_proc(self.abc), make_fixnum(1))
+
+    def test_cdr_proc(self):
+        self.assertEqual(cdr_proc(self.abc),
+                         SCMCons(make_fixnum(2), SCMTheEmptyList))
+
+    def test_set_car_proc(self):
+        self.assertEqual(set_car_proc(self.hij), SCMOkSymbol)
+
+    def test_set_cdr_proc(self):
+        self.assertEqual(set_cdr_proc(self.lmn), SCMOkSymbol)
+
+    def test_list_proc(self):
+        self.assertEqual(list_proc(self.abc),
+                         SCMCons(make_fixnum(1), make_fixnum(2)))
+
+
+
 
 
 if __name__ == "__main__":

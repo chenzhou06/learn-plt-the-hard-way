@@ -260,6 +260,40 @@ def is_procedure_proc(arguments):        # TODO: Untested
     return is_primitive_proc(SCMCar(arguments)) is True
 
 
+# List procedures
+def cons_proc(arguments):
+    """Cons procedure."""
+    return SCMCons(SCMCar(arguments),
+                   SCMCar(SCMCdr(arguments)))
+
+
+def car_proc(arguments):
+    """Car procedure."""
+    return SCMCar(SCMCar(arguments))
+
+
+def cdr_proc(arguments):
+    """Cdr procedure."""
+    return SCMCdr(SCMCar(arguments))
+
+
+def set_car_proc(arguments):
+    """Set car procedure."""
+    SCMSetCar(SCMCar(arguments), SCMCar(SCMCdr(arguments)))
+    return SCMOkSymbol
+
+def set_cdr_proc(arguments):
+    """Set cdr procedure."""
+    SCMSetCdr(SCMCar(arguments), SCMCar(SCMCdr(arguments)))
+    return SCMOkSymbol
+
+
+def list_proc(arguments):
+    """List procedure."""
+    return arguments
+
+
+
 # Type conversions, TODO: add test
 def char_to_integer_proc(arguments):
     """Convert character to integer."""
