@@ -134,6 +134,7 @@ def is_primitive_proc(obj):
 
 # Primitive Procedures
 def add_proc(arguments):
+    """Add numbers from arguments."""
     result = 0
     while not is_the_empty_list(arguments):
         result += SCMCar(arguments).data.value
@@ -143,59 +144,73 @@ def add_proc(arguments):
 
 # Type predicates
 def is_null_proc(arguments):
+    """Null predicate."""
     return is_the_empty_list(SCMCar(arguments)) is True
 
 
 def is_boolean_proc(arguments):
+    """Boolean predicate."""
     return is_boolean(SCMCar(arguments)) is True
 
 
 def is_symbol_proc(arguments):
+    """Symbol predicate."""
     return is_symbol(SCMCar(arguments)) is True
 
 
 def is_integer_proc(arguments):
+    """Integer predicate."""
     return is_fixnum(SCMCar(arguments)) is True
 
 
 def is_char_proc(arguments):
+    """Character predicate."""
     return is_character(SCMCar(arguments)) is True
 
 
 def is_string_proc(arguments):
+    """String predicate."""
     return is_string(SCMCar(arguments)) is True
 
 
 def is_pair_proc(arguments):
+    """Pair predicate."""
     return is_pair(SCMCar(arguments)) is True
 
 
 def is_procedure_proc(arguments):        # TODO: Untested
+    """Procedure predicate."""
     return is_primitive_proc(SCMCar(arguments)) is True
 
 
 # Type conversions, TODO: add test
 def char_to_integer_proc(arguments):
+    """Convert character to integer."""
     return make_fixnum(ord(SCMCar(arguments).data.value))
 
 
 def integer_to_char_proc(arguments):
+    """Convert integer to character."""
     return make_character(chr(SCMCar(arguments).data.value))
 
 
 def number_to_string_proc(arguments):
+    """Convert number to string."""
     return make_string(str(SCMCar(arguments).data.value))
 
 
 def string_to_number_proc(arguments):
+    """Convert string to number."""
     return make_fixnum(int(SCMCar(arguments).data.value))
 
 
 def symbol_to_string_proc(arguments):
+    """Convert symbol to string."""
     return make_string(SCMCar(arguments).data.value)
 
 
 def string_to_symbol_proc(arguments):
+    """Convert string to symbol."""
     return make_symbol(SCMCar(arguments).data.value)
 
 
