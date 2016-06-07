@@ -185,8 +185,9 @@ def is_number_equal_proc(arguments):
     """Compare two numbers, if equal returns true."""
     value = SCMCar(arguments).data.value
     while not is_the_empty_list(SCMCdr(arguments)):
-        if value != SCMCar(SCMCdr(arguments)).data.value
-        return False
+        if value != SCMCar(SCMCdr(arguments)).data.value:
+            return False
+        arguments = SCMCdr(arguments)
     return True
 
 
@@ -196,6 +197,7 @@ def is_less_then_proc(arguments):
     next_ = None
     while not is_the_empty_list(SCMCdr(arguments)):
         next_ = SCMCar(SCMCdr(arguments)).data.value
+        arguments = SCMCdr(arguments)
         if previous < next_:
             previous = next_
         else:
@@ -208,7 +210,8 @@ def is_greater_then_proc(arguments):
     previous = SCMCar(arguments).data.value
     next_ = None
     while not is_the_empty_list(SCMCdr(arguments)):
-        next_ = SCMCar(SCMCdr(arugments)).data.value
+        next_ = SCMCar(SCMCdr(arguments)).data.value
+        arguments = SCMCdr(arguments)
         if previous > next_:
             previous = next_
         else:

@@ -10,6 +10,7 @@ from schemev12 import char_to_integer_proc, integer_to_char_proc, \
     number_to_string_proc, string_to_number_proc, symbol_to_string_proc, \
     string_to_symbol_proc
 from schemev12 import add_proc, sub_proc, mul_proc, quotient_proc, remainder_proc
+from schemev12 import is_number_equal_proc, is_less_then_proc, is_greater_then_proc
 import unittest
 import io
 
@@ -229,7 +230,7 @@ class TestTypeConversion(unittest.TestCase):
 
 
 class TestArithmetic(unittest.TestCase):
-    """Test for primitive arithmetic procedures."""
+    """Tests for primitive arithmetic procedures."""
 
     def setUp(self):
         self.opints = SCMRead(io.StringIO("(1 2)"))
@@ -251,6 +252,27 @@ class TestArithmetic(unittest.TestCase):
     def test_remainder_proc(self):
         self.assertEqual(remainder_proc(self.opints), make_fixnum(1))
         self.assertEqual(remainder_proc(self.opints2), make_fixnum(1))
+
+
+class TestComparision(unittest.TestCase):
+    """Tests for primitive comparison procedures."""
+
+    def setUp(self):
+        self.eqnums = SCMRead(io.StringIO("(1 1 1 1 1)"))
+        self.lessnums = SCMRead(io.StringIO("(1 2 3)"))
+        self.greaternums = SCMRead(io.StringIO("(3 2 1)"))
+
+    def test_is_number_equal_proc(self):
+        self.assertTrue(is_number_equal_proc(self.eqnums))
+        self.assertFalse(is_number_equal_proc(self.lessnums))
+
+    def test_is_less_than_proc(self):
+        self.assertTrue(is_less_then_proc(self.lessnums))
+        self.assertFalse(is_less_then_proc(self.greaternums))
+
+    def test_greater_then_proc(self):
+        self.assertTrue(is_greater_then_proc(self.greaternums))
+        self.assertFalse(is_greater_then_proc(self.lessnums))
 
 
 if __name__ == "__main__":
