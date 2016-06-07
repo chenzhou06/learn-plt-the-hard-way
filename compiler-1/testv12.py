@@ -2,14 +2,14 @@ from schemev12 import SCMRead, SCMEval, make_fixnum, SCMTrue, SCMFalse, \
     make_character, make_string
 from schemev12 import SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons, \
     make_symbol, make_primitive_proc, define_variable, is_if, \
-    if_predicate, if_alternative, if_consequent, \
-    add_proc
+    if_predicate, if_alternative, if_consequent
 from schemev12 import is_null_proc, is_boolean_proc, is_integer_proc, \
     is_symbol_proc, is_char_proc, is_string_proc, is_pair_proc, \
     is_procedure_proc
 from schemev12 import char_to_integer_proc, integer_to_char_proc, \
     number_to_string_proc, string_to_number_proc, symbol_to_string_proc, \
     string_to_symbol_proc
+from schemev12 import add_proc, sub_proc, mul_proc, quotient_proc, remainder_proc
 import unittest
 import io
 
@@ -164,9 +164,6 @@ class TestTypePredicate(unittest.TestCase):
         self.oppair = SCMRead(io.StringIO("((1 2))"))
         self.procedure = SCMEval(SCMRead(io.StringIO("(+)")), SCMTheGlobalEnvironment)
 
-    def test_add_proc(self):
-        self.assertEqual(add_proc(self.opints), make_fixnum(3))
-
     def test_is_null_proc(self):
         self.assertTrue(is_null_proc(self.opnull))
         self.assertFalse(is_null_proc(self.opints))
@@ -231,7 +228,29 @@ class TestTypeConversion(unittest.TestCase):
                          make_symbol("abc"))
 
 
+class TestArithmetic(unittest.TestCase):
+    """Test for primitive arithmetic procedures."""
 
+    def setUp(self):
+        self.opints = SCMRead(io.StringIO("(1 2)"))
+        self.opints2 = SCMRead(io.StringIO("(9 2)"))
+
+    def test_add_proc(self):
+        self.assertEqual(add_proc(self.opints), make_fixnum(3))
+
+    def test_sub_proc(self):
+        self.assertEqual(sub_proc(self.opints), make_fixnum(-1))
+
+    def test_mul_proc(self):
+        self.assertEqual(mul_proc(self.opints), make_fixnum(2))
+
+    def test_quotient_proc(self):
+        self.assertEqual(quotient_proc(self.opints2), make_fixnum(4))
+        self.assertEqual(quotient_proc(self.opints), make_fixnum(0))
+
+    def test_remainder_proc(self):
+        self.assertEqual(remainder_proc(self.opints), make_fixnum(1))
+        self.assertEqual(remainder_proc(self.opints2), make_fixnum(1))
 
 
 if __name__ == "__main__":

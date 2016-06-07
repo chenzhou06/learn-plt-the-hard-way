@@ -1,3 +1,4 @@
+"""A Scheme interpreter ported from Bootsrap Scheme."""
 from enum import Enum
 
 
@@ -133,6 +134,8 @@ def is_primitive_proc(obj):
 
 
 # Primitive Procedures
+#
+# Arithmetic operations
 def add_proc(arguments):
     """Add numbers from arguments."""
     result = 0
@@ -140,6 +143,77 @@ def add_proc(arguments):
         result += SCMCar(arguments).data.value
         arguments = SCMCdr(arguments)
     return make_fixnum(result)
+
+
+def sub_proc(arguments):
+    """Subtraction."""
+    # TODO: reduce after implement scheme pair as list.
+    result = SCMCar(arguments).data.value
+    arguments = SCMCdr(arguments)
+    while not is_the_empty_list(arguments):
+        result -= SCMCar(arguments).data.value
+        arguments = SCMCdr(arguments)
+    return make_fixnum(result)
+
+
+def mul_proc(arguments):
+    """Multiplication."""
+    result = 1
+    while not is_the_empty_list(arguments):
+        result *= SCMCar(arguments).data.value
+        arguments = SCMCdr(arguments)
+    return make_fixnum(result)
+
+
+def quotient_proc(arguments):
+    """Quotient."""
+    num1 = SCMCar(arguments).data.value
+    num2 = SCMCar(SCMCdr(arguments)).data.value
+    return make_fixnum(num1 // num2)
+
+
+def remainder_proc(arguments):
+    """Remainder."""
+    num1 = SCMCar(arguments).data.value
+    num2 = SCMCar(SCMCdr(arguments)).data.value
+    return make_fixnum(num1 % num2)
+
+
+
+# Primitive comparison
+def is_number_equal_proc(arguments):
+    """Compare two numbers, if equal returns true."""
+    value = SCMCar(arguments).data.value
+    while not is_the_empty_list(SCMCdr(arguments)):
+        if value != SCMCar(SCMCdr(arguments)).data.value
+        return False
+    return True
+
+
+def is_less_then_proc(arguments):
+    """If arguments is decreasing then returns true."""
+    previous = SCMCar(arguments).data.value
+    next_ = None
+    while not is_the_empty_list(SCMCdr(arguments)):
+        next_ = SCMCar(SCMCdr(arguments)).data.value
+        if previous < next_:
+            previous = next_
+        else:
+            return False
+    return True
+
+
+def is_greater_then_proc(arguments):
+    """If arguments is increasing then returns false."""
+    previous = SCMCar(arguments).data.value
+    next_ = None
+    while not is_the_empty_list(SCMCdr(arguments)):
+        next_ = SCMCar(SCMCdr(arugments)).data.value
+        if previous > next_:
+            previous = next_
+        else:
+            return False
+    return True
 
 
 # Type predicates
