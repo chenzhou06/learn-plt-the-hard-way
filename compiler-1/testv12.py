@@ -1,4 +1,7 @@
-from schemev12 import SCMRead, SCMEval, SCMWrite, make_fixnum, SCMTrue, SCMFalse, \
+"""Tests for schemev12.py."""
+import unittest
+import io
+from schemev12 import SCMRead, SCMEval, make_fixnum, SCMTrue, SCMFalse, \
     make_character, make_string
 from schemev12 import SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons, SCMOkSymbol, \
     make_symbol, make_primitive_proc, define_variable, is_if, \
@@ -13,8 +16,7 @@ from schemev12 import add_proc, sub_proc, mul_proc, quotient_proc, remainder_pro
 from schemev12 import is_number_equal_proc, is_less_then_proc, is_greater_then_proc
 from schemev12 import (cons_proc, car_proc, cdr_proc, set_car_proc,
                        set_cdr_proc, list_proc)
-import unittest
-import io
+
 
 define_variable(make_symbol("+"),
                 make_primitive_proc(add_proc),
@@ -22,68 +24,75 @@ define_variable(make_symbol("+"),
 
 
 class TestFixnumObject(unittest.TestCase):
-    def test_SCMRead(self):
-
-        s = "123455"
-        s0 = "      123414"
-        f = io.StringIO(s)
-        f0 = io.StringIO(s0)
-        self.assertEqual(SCMRead(f), make_fixnum(int(s)))
-        self.assertEqual(SCMRead(f0), make_fixnum(int(s0)))
+    """Tests for fixnum."""
+    def test_scmread(self):
+        "SCMRead"
+        num1 = io.StringIO("123455")
+        num2 = io.StringIO("      123414")
+        self.assertEqual(SCMRead(num1), make_fixnum(123455))
+        self.assertEqual(SCMRead(num2), make_fixnum(123414))
         self.assertEqual(SCMRead(io.StringIO("-1234")),
                          make_fixnum(int("-1234")))
 
 
 class TestBoolean(unittest.TestCase):
-    def test_SCMBool(self):
-        t = "#t"
-        f = "#f"
-        t1 = "       #t   "
-        f2 = "     #f "
-        self.assertIs(SCMRead(io.StringIO(t)), SCMTrue)
-        self.assertIs(SCMRead(io.StringIO(f)), SCMFalse)
-        self.assertIs(SCMRead(io.StringIO(t1)), SCMTrue)
-        self.assertIs(SCMRead(io.StringIO(f2)), SCMFalse)
+    "Tests for boolean."
+    def test_scmbool(self):
+        "SCMBool"
+        true1 = "#t"
+        false1 = "#f"
+        true2 = "       #t   "
+        false2 = "     #f "
+        self.assertIs(SCMRead(io.StringIO(true1)), SCMTrue)
+        self.assertIs(SCMRead(io.StringIO(false1)), SCMFalse)
+        self.assertIs(SCMRead(io.StringIO(true2)), SCMTrue)
+        self.assertIs(SCMRead(io.StringIO(false2)), SCMFalse)
 
 
 class TestCharacter(unittest.TestCase):
+    "Tests for character."
     def test_character(self):
-        c0 = "#\\a"
-        c1 = "  #\\b"
-        s = "  #\\space"
-        n = "  #\\newline "
-        g = "  #\\g  "
-        self.assertEqual(SCMRead(io.StringIO(c0)),
+        "SCMRead for character."
+        char1 = "#\\a"
+        char2 = "  #\\b"
+        char3 = "  #\\space"
+        char4 = "  #\\newline "
+        char5 = "  #\\g  "
+        self.assertEqual(SCMRead(io.StringIO(char1)),
                          make_character("a"))
-        self.assertEqual(SCMRead(io.StringIO(c1)),
+        self.assertEqual(SCMRead(io.StringIO(char2)),
                          make_character("b"))
-        self.assertEqual(SCMRead(io.StringIO(s)),
+        self.assertEqual(SCMRead(io.StringIO(char3)),
                          make_character(" "))
-        self.assertEqual(SCMRead(io.StringIO(n)),
+        self.assertEqual(SCMRead(io.StringIO(char4)),
                          make_character("\n"))
-        self.assertEqual(SCMRead(io.StringIO(g)),
+        self.assertEqual(SCMRead(io.StringIO(char5)),
                          make_character("g"))
 
 
 class TestString(unittest.TestCase):
+    "Tests for string."
     def test_string(self):
-        s0 = "\"asdf\""
-        s1 = "\"asdf\"asdf\""
-        s2 = "\"asdf\n\""
-        s3 = """\"asdf
+        "Read string."
+        string1 = "\"asdf\""
+        string2 = "\"asdf\"asdf\""
+        string3 = "\"asdf\n\""
+        string4 = """\"asdf
 \""""
-        self.assertEqual(SCMRead(io.StringIO(s0)),
+        self.assertEqual(SCMRead(io.StringIO(string1)),
                          make_string("asdf"))
-        self.assertEqual(SCMRead(io.StringIO(s1)),
+        self.assertEqual(SCMRead(io.StringIO(string2)),
                          make_string("asdf"))
-        self.assertEqual(SCMRead(io.StringIO(s2)),
+        self.assertEqual(SCMRead(io.StringIO(string3)),
                          make_string("asdf\n"))
-        self.assertEqual(SCMRead(io.StringIO(s3)),
+        self.assertEqual(SCMRead(io.StringIO(string4)),
                          make_string("asdf\n"))
 
 
 class TestTheEmptyList(unittest.TestCase):
+    "Test for emptylist."
     def test_emptylist(self):
+        "Read empty list."
         empty1 = """()"""
         empty2 = """       ( )  """
         empty3 = """
@@ -99,62 +108,72 @@ class TestTheEmptyList(unittest.TestCase):
 
 
 class TestPair(unittest.TestCase):
+    "Test for read pair."
     def test_pair(self):
-        p1 = "(0 . 1)"
-        p2 = "(0 1)"
-        p3 = "(0 . (1 . ()))"
-        p4 = "(0 . (1 . 2))"
-        p1_e = SCMCons(make_fixnum(0), make_fixnum(1))
-        p2_e = SCMCons(make_fixnum(0),
-                       SCMCons(make_fixnum(1), SCMTheEmptyList))
-        p3_e = p2_e
-        p4_e = SCMCons(make_fixnum(0), SCMCons(make_fixnum(1), make_fixnum(2)))
-        self.assertEqual(SCMRead(io.StringIO(p1)),
-                         p1_e)
-        self.assertEqual(SCMRead(io.StringIO(p2)),
-                         p2_e)
-        self.assertEqual(SCMRead(io.StringIO(p3)),
-                         p3_e)
-        self.assertEqual(SCMRead(io.StringIO(p4)),
-                         p4_e)
+        "Read pair."
+        pair1 = "(0 . 1)"
+        pair2 = "(0 1)"
+        pair3 = "(0 . (1 . ()))"
+        pair4 = "(0 . (1 . 2))"
+        pair1_e = SCMCons(make_fixnum(0), make_fixnum(1))
+        pair2_e = SCMCons(make_fixnum(0),
+                          SCMCons(make_fixnum(1), SCMTheEmptyList))
+        pair3_e = pair2_e
+        pair4_e = SCMCons(make_fixnum(0), SCMCons(make_fixnum(1), make_fixnum(2)))
+        self.assertEqual(SCMRead(io.StringIO(pair1)),
+                         pair1_e)
+        self.assertEqual(SCMRead(io.StringIO(pair2)),
+                         pair2_e)
+        self.assertEqual(SCMRead(io.StringIO(pair3)),
+                         pair3_e)
+        self.assertEqual(SCMRead(io.StringIO(pair4)),
+                         pair4_e)
 
 
 class TestSymbol(unittest.TestCase):
+    "Test for symbol."
     def test_symbol(self):
-        s1 = "asdf"
-        s1_e = make_symbol(s1)
-        s3 = "scheme?"
-        s3_e = make_symbol(s3)
-        s4 = "scheme-p"
-        s4_e = make_symbol(s4)
-        self.assertEqual(SCMRead(io.StringIO(s1)), s1_e)
-        self.assertEqual(SCMRead(io.StringIO(s3)), s3_e)
-        self.assertEqual(SCMRead(io.StringIO(s4)), s4_e)
+        "Read symbol."
+        symbol1 = "asdf"
+        symbol1_e = make_symbol(symbol1)
+        symbol2 = "scheme?"
+        symbol2_e = make_symbol(symbol2)
+        symbol3 = "scheme-p"
+        symbol3_e = make_symbol(symbol3)
+        self.assertEqual(SCMRead(io.StringIO(symbol1)), symbol1_e)
+        self.assertEqual(SCMRead(io.StringIO(symbol2)), symbol2_e)
+        self.assertEqual(SCMRead(io.StringIO(symbol3)), symbol3_e)
 
 
 class TestIf(unittest.TestCase):
+    "Test for if predicate."
     def setUp(self):
         self.ifexp = SCMRead(io.StringIO("(if #t 0 1)"))
         self.ifexp2 = SCMRead(io.StringIO("(if #t 0)"))
 
     def test_if(self):
+        "Is if procedure."
         self.assertTrue(is_if(self.ifexp))
 
     def test_if_predicate(self):
+        "Return the condition in a if procedure."
         self.assertIs(if_predicate(self.ifexp),
                       SCMTrue)
 
     def test_if_consequent(self):
+        "Return the consequence when success."
         self.assertEqual(if_consequent(self.ifexp),
                          make_fixnum(0))
 
     def test_if_alternative(self):
+        "Return the alternative."
         self.assertEqual(if_alternative(self.ifexp),
                          make_fixnum(1))
         self.assertIs(if_alternative(self.ifexp2), SCMFalse)
 
 
 class TestTypePredicate(unittest.TestCase):
+    "Type predicate."
     def setUp(self):
         self.opints = SCMRead(io.StringIO("(1 2)"))
         self.opnull = SCMRead(io.StringIO("(())"))
@@ -168,42 +187,52 @@ class TestTypePredicate(unittest.TestCase):
         self.procedure = SCMEval(SCMRead(io.StringIO("(+)")), SCMTheGlobalEnvironment)
 
     def test_is_null_proc(self):
+        "Tell if it is a null."
         self.assertTrue(is_null_proc(self.opnull))
         self.assertFalse(is_null_proc(self.opints))
 
     def test_is_boolean_proc(self):
+        "Is boolean?"
         self.assertTrue(is_boolean_proc(self.optrue))
         self.assertTrue(is_boolean_proc(self.opfalse))
         self.assertFalse(is_boolean_proc(self.opints))
 
     def test_is_symbol_proc(self):
+        "Is symbol?"
         self.assertTrue(is_symbol_proc(self.opsymbol))
         self.assertFalse(is_symbol_proc(self.opints))
 
     def test_is_integer_proc(self):
+        "Is integer?"
         self.assertTrue(is_integer_proc(self.opint))
         self.assertTrue(is_integer_proc(self.opints))
         self.assertFalse(is_integer_proc(self.optrue))
 
     def test_is_char_proc(self):
+        "Is character?"
         self.assertTrue(is_char_proc(self.opchar))
         self.assertFalse(is_char_proc(self.opints))
 
     def test_is_string_proc(self):
+        "Is string?"
         self.assertTrue(is_string_proc(self.opstring))
         self.assertFalse(is_string_proc(self.opchar))
 
     def test_is_pair_proc(self):
+        "Is pair?"
         self.assertTrue(is_pair_proc(self.oppair))
         self.assertFalse(is_pair_proc(self.opnull))
 
     def test_is_procedure_proc(self):
+        "Is procedure?"
+        # TODO
         # self.assertTrue(is_procedure_proc(self.procedure))
         # self.assertFalse(is_procedure_proc(self.oppair))
         pass
 
 
 class TestTypeConversion(unittest.TestCase):
+    "Type Conversiont."
     def setUp(self):
         self.char = SCMRead(io.StringIO("(#\\a)"))
         self.integer = SCMRead(io.StringIO("(97)"))
@@ -213,18 +242,21 @@ class TestTypeConversion(unittest.TestCase):
         self.sybstr = SCMRead(io.StringIO("""("abc")"""))
 
     def test_char_and_integer(self):
+        "Character to integer."
         self.assertEqual(char_to_integer_proc(self.char),
                          make_fixnum(97))
         self.assertEqual(integer_to_char_proc(self.integer),
                          make_character("a"))
 
-    def test_number_and_proc(self):
+    def test_number_and_string(self):
+        "Number to string."
         self.assertEqual(number_to_string_proc(self.number),
                          make_string("12345"))
         self.assertEqual(string_to_number_proc(self.string),
                          make_fixnum(12345))
 
     def test_symbol_and_string(self):
+        "Symbol to string."
         self.assertEqual(symbol_to_string_proc(self.symbol),
                          make_string("abc"))
         self.assertEqual(string_to_symbol_proc(self.sybstr),
@@ -239,19 +271,24 @@ class TestArithmetic(unittest.TestCase):
         self.opints2 = SCMRead(io.StringIO("(9 2)"))
 
     def test_add_proc(self):
+        "Add."
         self.assertEqual(add_proc(self.opints), make_fixnum(3))
 
     def test_sub_proc(self):
+        "Minus."
         self.assertEqual(sub_proc(self.opints), make_fixnum(-1))
 
     def test_mul_proc(self):
+        "Multiplication."
         self.assertEqual(mul_proc(self.opints), make_fixnum(2))
 
     def test_quotient_proc(self):
+        "Quotient."
         self.assertEqual(quotient_proc(self.opints2), make_fixnum(4))
         self.assertEqual(quotient_proc(self.opints), make_fixnum(0))
 
     def test_remainder_proc(self):
+        "Remainder."
         self.assertEqual(remainder_proc(self.opints), make_fixnum(1))
         self.assertEqual(remainder_proc(self.opints2), make_fixnum(1))
 
@@ -265,14 +302,17 @@ class TestComparision(unittest.TestCase):
         self.greaternums = SCMRead(io.StringIO("(3 2 1)"))
 
     def test_is_number_equal_proc(self):
+        "Is two numbers equal?"
         self.assertTrue(is_number_equal_proc(self.eqnums))
         self.assertFalse(is_number_equal_proc(self.lessnums))
 
     def test_is_less_than_proc(self):
+        "Less than?"
         self.assertTrue(is_less_then_proc(self.lessnums))
         self.assertFalse(is_less_then_proc(self.greaternums))
 
     def test_greater_then_proc(self):
+        "Greater than?"
         self.assertTrue(is_greater_then_proc(self.greaternums))
         self.assertFalse(is_greater_then_proc(self.lessnums))
 
@@ -286,28 +326,31 @@ class TestListProc(unittest.TestCase):
         self.opq = SCMRead(io.StringIO("((1 2))"))
 
     def test_cons_proc(self):
+        "Scheme cons."
         self.assertEqual(cons_proc(self.abc),
                          SCMCons(make_fixnum(1), make_fixnum(2)))
 
     def test_car_proc(self):
+        "Scheme car."
         self.assertEqual(car_proc(self.opq), make_fixnum(1))
 
     def test_cdr_proc(self):
+        "Scheme cdr."
         self.assertEqual(cdr_proc(self.opq),
                          SCMCons(make_fixnum(2), SCMTheEmptyList))
 
     def test_set_car_proc(self):
+        "Set! car."
         self.assertEqual(set_car_proc(self.hij), SCMOkSymbol)
 
     def test_set_cdr_proc(self):
+        "Set! cdr."
         self.assertEqual(set_cdr_proc(self.lmn), SCMOkSymbol)
 
     def test_list_proc(self):
+        "Scheme list."
         self.assertEqual(list_proc(self.abc),
                          self.abc)
-
-
-
 
 
 if __name__ == "__main__":
