@@ -1,4 +1,4 @@
-from schemev12 import SCMRead, SCMEval, make_fixnum, SCMTrue, SCMFalse, \
+from schemev12 import SCMRead, SCMEval, SCMWrite, make_fixnum, SCMTrue, SCMFalse, \
     make_character, make_string
 from schemev12 import SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons, SCMOkSymbol, \
     make_symbol, make_primitive_proc, define_variable, is_if, \
@@ -277,23 +277,23 @@ class TestComparision(unittest.TestCase):
         self.assertFalse(is_greater_then_proc(self.lessnums))
 
 
-class TestListProc(unittest.TestCase): # TODO: test failed.
+class TestListProc(unittest.TestCase):
     """Tests for list procedures."""
-
     def setUp(self):
-        self.abc = SCMRead(io.StringIO("((1) (2))"))
+        self.abc = SCMRead(io.StringIO("(1 2)"))
         self.hij = SCMRead(io.StringIO("((1 2) 3)"))
         self.lmn = SCMRead(io.StringIO("((1 2) (7 8))"))
+        self.opq = SCMRead(io.StringIO("((1 2))"))
 
     def test_cons_proc(self):
         self.assertEqual(cons_proc(self.abc),
                          SCMCons(make_fixnum(1), make_fixnum(2)))
 
     def test_car_proc(self):
-        self.assertEqual(car_proc(self.abc), make_fixnum(1))
+        self.assertEqual(car_proc(self.opq), make_fixnum(1))
 
     def test_cdr_proc(self):
-        self.assertEqual(cdr_proc(self.abc),
+        self.assertEqual(cdr_proc(self.opq),
                          SCMCons(make_fixnum(2), SCMTheEmptyList))
 
     def test_set_car_proc(self):
@@ -304,7 +304,7 @@ class TestListProc(unittest.TestCase): # TODO: test failed.
 
     def test_list_proc(self):
         self.assertEqual(list_proc(self.abc),
-                         SCMCons(make_fixnum(1), make_fixnum(2)))
+                         self.abc)
 
 
 
