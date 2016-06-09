@@ -4,6 +4,7 @@ from enum import Enum
 
 # Model
 class ObjectType(Enum):
+    "Types"
     FIXNUM = 1
     BOOLEAN = 2
     CHARACTER = 3
@@ -15,6 +16,7 @@ class ObjectType(Enum):
 
 
 class _ObjectValue:
+    "Private object for store value."   # TODO: redundant
     def __init__(self, value):
         self.value = value
 
@@ -23,9 +25,10 @@ class _ObjectValue:
 
 
 class SCMObject:
-    def __init__(self, type, data):
+    "Base class for scheme types."
+    def __init__(self, type_, data):
         "type: ObjectType. data: _ObjectValue"
-        self.type = type
+        self.type = type_
         self.data = _ObjectValue(data)
 
     def __eq__(self, other):
@@ -34,7 +37,7 @@ class SCMObject:
     def __repr__(self):
         return "<Type: {}, Value: {}>".format(self.type, self.data)
 
-
+# FIXME: Re-factoring to user better var name.
 # Global
 SCMTheEmptyList = SCMObject(ObjectType.THE_EMPTY_LIST, None)
 SCMTrue = SCMObject(ObjectType.BOOLEAN, True)
@@ -44,18 +47,22 @@ SCMTheEmptyEnvironment = SCMTheEmptyList
 
 
 def is_the_empty_list(obj):
+    "Empty list predicate."
     return obj is SCMTheEmptyList
 
 
 def is_boolean(obj):
+    "Boolean predicates."
     return obj.type == ObjectType.BOOLEAN
 
 
 def is_false(obj):
+    "False is False."
     return obj is SCMFalse
 
 
 def is_true(obj):
+    "True is true."
     return obj is SCMTrue
 
 
@@ -181,6 +188,7 @@ def remainder_proc(arguments):
 
 
 # Primitive comparison
+# FIXME: Should return scheme boolean objects.
 def is_number_equal_proc(arguments):
     """Compare two numbers, if equal returns true."""
     value = SCMCar(arguments).data.value
@@ -292,6 +300,16 @@ def list_proc(arguments):
     """List procedure."""
     return arguments
 
+
+# Comparison
+def is_eq_proc(arguments):
+    obj1 = SCMCar(arguments)
+    obj2 = SCMCar(SCMCdr(arguments))
+    if obj1.type != obj2.type:
+        return SCMFalse
+    else:
+        return SCMTrue if obj1.data.value == \
+            obj2.data.value else SCMFalse
 
 
 # Type conversions, TODO: add test
@@ -420,9 +438,45 @@ def setup_environment():
 
 SCMTheGlobalEnvironment = setup_environment()
 # inits
-define_variable(make_symbol("+"),
-                make_primitive_proc(add_proc),
-                SCMTheGlobalEnvironment)
+def add_procedure(scheme_name, py_name):
+    define_variable(make_symbol(scheme_name),
+                    make_primitive_proc(py_name),
+                    SCMTheGlobalEnvironment)
+    return
+
+add_procedure("null?", is_null_proc)
+add_procedure("boolean?", is_boolean_proc)
+add_procedure("symbol?", is_symbol_proc)
+add_procedure("integer?", is_integer_proc)
+add_procedure("char?", is_char_proc)
+add_procedure("string?", is_string_proc)
+add_procedure("pair?", is_pair_proc)
+add_procedure("procedure?", is_procedure_proc)
+
+add_procedure("char->integer", char_to_integer_proc)
+add_procedure("integer->char", integer_to_char_proc)
+add_procedure("number->string", number_to_string_proc)
+add_procedure("string->number", string_to_number_proc)
+add_procedure("symbol->string", symbol_to_string_proc)
+add_procedure("string->symbol", string_to_symbol_proc)
+
+add_procedure("+", add_proc)
+add_procedure("-", sub_proc)
+add_procedure("*", mul_proc)
+add_procedure("quotient", quotient_proc)
+add_procedure("remainder", remainder_proc)
+add_procedure("=", is_number_equal_proc)
+add_procedure("<", is_less_then_proc)
+add_procedure(">", is_greater_then_proc)
+
+add_procedure("cons", cons_proc)
+add_procedure("car", car_proc)
+add_procedure("cdr", cdr_proc)
+add_procedure("set-car!", set_car_proc)
+add_procedure("set-cdr!", set_cdr_proc)
+add_procedure("list", list_proc)
+
+add_procedure("eq?", is_eq_proc)
 
 
 # Read
@@ -527,7 +581,7 @@ def read_character(fhandle, leading):
             peek_expected_delimiter(fhandle)
             return make_character(char)
     else:
-        raise Exception("Unknown boolean or character literal.")
+        raise Exception("Unknown boolean or character literal, '{}'.".format(leading))
 
 
 def read_string(fhandle):

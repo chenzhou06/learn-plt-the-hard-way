@@ -16,11 +16,7 @@ from schemev12 import add_proc, sub_proc, mul_proc, quotient_proc, remainder_pro
 from schemev12 import is_number_equal_proc, is_less_then_proc, is_greater_then_proc
 from schemev12 import (cons_proc, car_proc, cdr_proc, set_car_proc,
                        set_cdr_proc, list_proc)
-
-
-define_variable(make_symbol("+"),
-                make_primitive_proc(add_proc),
-                SCMTheGlobalEnvironment)
+from schemev12 import is_eq_proc
 
 
 class TestFixnumObject(unittest.TestCase):
@@ -351,6 +347,36 @@ class TestListProc(unittest.TestCase):
         "Scheme list."
         self.assertEqual(list_proc(self.abc),
                          self.abc)
+
+
+class TestEqual(unittest.TestCase):
+    def setUp(self):
+        self.nums1 = SCMRead(io.StringIO("(1 1)"))
+        self.nums2 = SCMRead(io.StringIO("(1 2)"))
+        self.chars1 = SCMRead(io.StringIO("(#\\a #\\a)"))
+        self.chars2 = SCMRead(io.StringIO("(#\\a #\\b)"))
+        self.string1 = SCMRead(io.StringIO("""("string" "string")"""))
+        self.string2 = SCMRead(io.StringIO("""("qwer" "asdf")"""))
+        self.difftype = SCMRead(io.StringIO("(1 #\\a)"))
+
+    def test_num_eq(self):
+        "Check is_eq_proc for numbers."
+        self.assertIs(is_eq_proc(self.nums1), SCMTrue)
+        self.assertIs(is_eq_proc(self.nums2), SCMFalse)
+
+    def test_char_eq(self):
+        "Check is_eq_proc for characters."
+        self.assertIs(is_eq_proc(self.chars1), SCMTrue)
+        self.assertIs(is_eq_proc(self.chars2), SCMFalse)
+
+    def test_string_eq(self):
+        "Check `is_eq_proc` for strings."
+        self.assertIs(is_eq_proc(self.string1), SCMTrue)
+        self.assertIs(is_eq_proc(self.string2), SCMFalse)
+
+    def test_not_eq(self):
+        "Check type checking."
+        self.assertIs(is_eq_proc(self.difftype), SCMFalse)
 
 
 if __name__ == "__main__":
