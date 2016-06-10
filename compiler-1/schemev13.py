@@ -1,5 +1,6 @@
-"""A Scheme interpreter ported from Bootsrap Scheme."""
+#!/usr/bin/env python3
 from enum import Enum
+import sys
 
 
 # Model
@@ -950,7 +951,8 @@ def SCMWrite(obj):
 
 
 # REPL
-def main():
+def repl():
+    "Repl"
     print("Welcome to Bootstrap Scheme.", "Use ctrl-c to exit.")
     import io
     while True:
@@ -961,4 +963,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    repl()
