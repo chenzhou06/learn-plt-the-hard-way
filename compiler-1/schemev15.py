@@ -653,8 +653,8 @@ def is_delimiter(c):
 
 
 def is_initial(c):
-    return c.isalpha() or c == "*" or c == "/" or \
-        c == "<" or c == "=" or c == "?" or c == "!"
+    return (c.isalpha() or c == "*" or c == "/" or c == ">" or
+            c == "<" or c == "=" or c == "?" or c == "!")
 
 
 def peek(fhandle):
