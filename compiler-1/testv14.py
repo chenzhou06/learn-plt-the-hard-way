@@ -1,28 +1,7 @@
 """Tests for schemev12.py."""
 import unittest
 import io
-from schemev14 import SCMRead, SCMEval, make_fixnum, SCMTrue, SCMFalse, \
-    make_character, make_string, SCMObject
-from schemev14 import (SCMTheEmptyList, SCMTheGlobalEnvironment, SCMCons,
-                       SCMCar, SCMCdr, SCMOkSymbol,
-                       make_symbol, make_primitive_proc, define_variable, is_if,
-                       if_predicate, if_alternative, if_consequent)
-from schemev14 import is_null_proc, is_boolean_proc, is_integer_proc, \
-    is_symbol_proc, is_char_proc, is_string_proc, is_pair_proc, \
-    is_procedure_proc
-from schemev14 import char_to_integer_proc, integer_to_char_proc, \
-    number_to_string_proc, string_to_number_proc, symbol_to_string_proc, \
-    string_to_symbol_proc
-from schemev14 import add_proc, sub_proc, mul_proc, quotient_proc, remainder_proc
-from schemev14 import is_number_equal_proc, is_less_then_proc, is_greater_then_proc
-from schemev14 import (cons_proc, car_proc, cdr_proc, set_car_proc,
-                       set_cdr_proc, list_proc)
-from schemev14 import is_eq_proc
-from schemev14 import (make_compound_proc, make_lambda, is_lambda, lambda_parameters,
-                       lambda_body, first_exp, is_last_exp, rest_exp, definition_variable,
-                       definition_value)
-from schemev14 import SCMBeginSymbol, make_begin, is_begin, begin_actions
-
+from schemev14 import *
 
 class TestFixnumObject(unittest.TestCase):
     """Tests for fixnum."""
